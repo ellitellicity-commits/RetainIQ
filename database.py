@@ -202,6 +202,78 @@ def _to_float(v):
     except (TypeError, ValueError):
         return None
 
+# Demo quotes keyed by company name (matched against demo_data.json's deals).
+# Line items are sized so each quote's subtotal lands exactly on that deal's
+# seeded value -- "sent" deals are the ones already narratively in
+# Quote sent/Closed-Won; "draft" deals are still in Negotiation.
+DEMO_QUOTES = [
+    {
+        "company": "RBC Bank", "status": "sent", "sent_at": "2026-07-12",
+        "items": [
+            ("IBM QRadar SIEM - Annual License Renewal", 1, 150000),
+            ("Premium Support & Maintenance", 1, 35000),
+            ("Professional Services - Implementation", 1, 15000),
+        ],
+    },
+    {
+        "company": "Sun Life Financial", "status": "sent", "sent_at": "2026-07-15",
+        "items": [
+            ("Cloud Security Platform - Enterprise Tier", 1, 280000),
+            ("Data Loss Prevention Module", 1, 45000),
+            ("Onboarding & Training", 1, 15000),
+        ],
+    },
+    {
+        "company": "Telus Corporation", "status": "sent", "sent_at": "2026-07-08",
+        "items": [
+            ("Managed Detection & Response - Annual", 1, 78000),
+            ("24/7 SOC Monitoring", 12, 1250),
+            ("Incident Response Retainer", 1, 2000),
+        ],
+    },
+    {
+        "company": "Manulife", "status": "sent", "sent_at": "2026-07-05",
+        "items": [
+            ("Identity & Access Management Platform", 1, 70000),
+            ("Multi-Factor Authentication Add-on (per seat)", 500, 40),
+            ("Implementation Services", 1, 5000),
+        ],
+    },
+    {
+        "company": "TD Bank", "status": "draft", "sent_at": None,
+        "items": [
+            ("Enterprise Security Platform - Base License", 1, 110000),
+            ("Advanced Threat Analytics Module", 1, 30000),
+            ("Training & Enablement", 1, 10000),
+        ],
+    },
+    {
+        "company": "Bell Canada", "status": "draft", "sent_at": None,
+        "items": [
+            ("Network Security Suite - Enterprise", 1, 400000),
+            ("Next-Gen Firewall Appliances", 8, 12000),
+            ("Deployment & Integration Services", 1, 24000),
+        ],
+    },
+]
+
+def seed_demo_quotes(c, deal_id_by_company):
+    """Populate quote_items + quote_discount/status/sent_at for a handful of
+    seeded deals, so the Quotes page has real data instead of an empty list."""
+    for q in DEMO_QUOTES:
+        deal_id = deal_id_by_company.get(q["company"])
+        if not deal_id:
+            continue
+        for idx, (description, quantity, unit_price) in enumerate(q["items"]):
+            c.execute(
+                "INSERT INTO quote_items (deal_id, description, quantity, unit_price, sort_order) VALUES (?, ?, ?, ?, ?)",
+                (deal_id, description, quantity, unit_price, idx),
+            )
+        c.execute(
+            "UPDATE pipeline_deals SET quote_discount = 0, quote_status = ?, quote_sent_at = ? WHERE id = ?",
+            (q["status"], q["sent_at"], deal_id),
+        )
+
 def seed_if_empty():
     """Load demo data from clients.csv if the database is empty.
     Needed because Render's free tier wipes the disk on every boot,
@@ -251,12 +323,16 @@ def seed_if_empty():
                            VALUES (?, ?, ?, ?, ?, ?)""",
                         (ct["client_id"], ct["name"], ct["title"], ct["email"], ct["phone"], ct["is_primary"])
                     )
+                deal_id_by_company = {}
                 for deal in demo.get("deals", []):
                     c.execute(
                         """INSERT INTO pipeline_deals (company, client_id, value, stage, owner, product, lead_source, status, created_at, stage_updated_at)
                            VALUES (?, ?, ?, ?, ?, ?, ?, 'open', '2026-07-01', '2026-07-10')""",
                         (deal["company"], deal["client_id"], deal["value"], deal["stage"], deal["owner"], deal["product"], deal["lead_source"])
                     )
+                    deal_id_by_company[deal["company"]] = c.lastrowid
+
+                seed_demo_quotes(c, deal_id_by_company)
 
             conn.commit()
             print(f"Seeded {rows} demo clients from clients.csv")
