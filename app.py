@@ -8,7 +8,7 @@ from database import get_db, init_db, seed_if_empty, ensure_todays_retention_sna
 app = Flask(__name__)
 from contacts_api import contacts_bp
 app.register_blueprint(contacts_bp)
-from quotes_api import quotes_bp
+from quotes_api import quotes_bp, ensure_schema as ensure_quotes_schema
 app.register_blueprint(quotes_bp)
 
 
@@ -634,6 +634,16 @@ def import_data():
 
 # Render wipes the disk on every boot, so rebuild + reseed the DB on startup.
 init_db()
+
+# quotes_api.ensure_schema() also runs at import time (above), but that fires
+# before pipeline_deals necessarily exists yet -- deals_api's own ensure_schema()
+# (imported after quotes_api, line 15) can end up being what actually creates
+# pipeline_deals first, with its own narrower schema that has no quote_discount/
+# quote_status/quote_sent_at columns, leaving quotes_api's ALTER TABLE calls
+# swallowed and the columns permanently missing. Re-run it now that init_db()
+# has guaranteed the table exists, and before seed_if_empty() -- which writes
+# to those columns -- runs.
+ensure_quotes_schema()
 seed_if_empty()
 
 if __name__ == "__main__":
