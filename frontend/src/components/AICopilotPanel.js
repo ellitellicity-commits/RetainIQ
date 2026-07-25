@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { DEAL_INSIGHTS, NEXT_BEST_ACTIONS, AUTO_FOLLOWUPS } from "../data/mockData";
+import useBreakpoint from "../hooks/useBreakpoint";
 
 const ICONS = {
   sparkle: (
@@ -405,6 +406,7 @@ function DealAlertsSection() {
 }
 
 function ReadyToSendSection() {
+  const { isMobile } = useBreakpoint();
   const [expanded, setExpanded] = useState(true);
   const [followups, setFollowups] = useState(AUTO_FOLLOWUPS);
   const [editingId, setEditingId] = useState(null);
@@ -589,7 +591,7 @@ function ReadyToSendSection() {
 
       {/* Send Confirmation Modal */}
       {sendingId && (
-        <div style={{ position: "fixed", bottom: 24, right: 380, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10, padding: "12px 18px", boxShadow: "0 8px 32px rgba(0,0,0,0.3)", zIndex: 10001, display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ position: "fixed", bottom: 24, right: isMobile ? 24 : 380, left: isMobile ? 24 : "auto", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10, padding: "12px 18px", boxShadow: "0 8px 32px rgba(0,0,0,0.3)", zIndex: 10001, display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 18, height: 18, border: "2px solid var(--cyan)", borderTop: "2px solid transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
           <span style={{ fontSize: 12, color: "var(--text2)", fontWeight: 500 }}>Sending email to {followups.find(f => f.id === sendingId)?.dealName}...</span>
         </div>
@@ -599,15 +601,31 @@ function ReadyToSendSection() {
 }
 
 export default function AICopilotPanel({ open, onClose }) {
+  const { isMobile } = useBreakpoint();
   return (
     <AnimatePresence>
       {open && (
+        <>
+          {isMobile && (
+            <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 9998 }} />
+          )}
         <motion.div
-          initial={{ x: 360 }}
-          animate={{ x: 0 }}
-          exit={{ x: 360 }}
+          initial={{ x: isMobile ? 0 : 360, y: isMobile ? 40 : 0, opacity: isMobile ? 0 : 1 }}
+          animate={{ x: 0, y: 0, opacity: 1 }}
+          exit={{ x: isMobile ? 0 : 360, y: isMobile ? 40 : 0, opacity: isMobile ? 0 : 1 }}
           transition={{ type: "spring", damping: 28, stiffness: 300 }}
-          style={{
+          style={isMobile ? {
+            position: "fixed",
+            inset: 0,
+            width: "100vw",
+            height: "100dvh",
+            zIndex: 9999,
+            background: "var(--card)",
+            borderLeft: "none",
+            boxShadow: "none",
+            display: "flex",
+            flexDirection: "column",
+          } : {
             position: "fixed",
             top: 0,
             right: 0,
@@ -708,6 +726,7 @@ export default function AICopilotPanel({ open, onClose }) {
             </span>
           </div>
         </motion.div>
+        </>
       )}
     </AnimatePresence>
   );

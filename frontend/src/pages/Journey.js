@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import useBreakpoint from "../hooks/useBreakpoint";
 
 const STAGES = ["New Leads", "Qualified", "Demo", "Quote sent", "Negotiation", "Closed-Won", "Closed-Lost"];
 const STAGE_DOT = {
@@ -31,6 +32,7 @@ const lbl = { fontSize: 12.5, color: "var(--text3)", marginBottom: 4, marginTop:
 const qfield = { padding: "8px 10px", borderRadius: 7, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontFamily: "Inter", fontSize: 13.5, outline: "none", boxSizing: "border-box" };
 
 export default function Pipeline({ API, pageAction, clearAction, openDealId, clearOpenDeal }) {
+  const { isMobile } = useBreakpoint();
   const [deals, setDeals] = useState([]);
   const [draggingId, setDraggingId] = useState(null);
   const [overStage, setOverStage] = useState(null);
@@ -124,6 +126,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
 
   const del = () => {
     if (selected === "new") { close(); return; }
+    if (!window.confirm(`Delete the deal with ${selected.company || "this company"}? This can't be undone.`)) return;
     fetch(`${API}/api/db/deals/${selected.id}`, { method: "DELETE" }).then(() => { load(); close(); });
   };
 
@@ -161,15 +164,16 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
     const big = (d.value || 0) >= 100000;
     const overdue = d.next_action_date && d.next_action_date <= todayISO() && d.status === "open";
     return (
-      <div key={d.id} draggable
+      <div key={d.id} draggable={!isMobile}
         onDragStart={() => setDraggingId(d.id)}
         onDragEnd={() => { setDraggingId(null); setOverStage(null); }}
         onClick={() => openDeal(d)}
-        style={{ background: "var(--card)", border: "1px solid var(--border2)", borderRadius: 10, padding: "12px 13px", marginBottom: 10, cursor: "grab", opacity: d.status === "lost" ? 0.6 : 1 }}>
+        style={{ background: "var(--card)", border: "1px solid var(--border2)", borderRadius: 10, padding: "12px 13px", marginBottom: 10, cursor: isMobile ? "pointer" : "grab", opacity: d.status === "lost" ? 0.6 : 1 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
             {h && <span title={h.t} style={{ width: 9, height: 9, borderRadius: "50%", background: h.c, flex: "0 0 auto" }} />}
             <span style={{ fontSize: 14.5, fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.company || "—"}</span>
+            {h && isMobile && <span style={{ fontSize: 10.5, fontWeight: 600, color: h.c, flex: "0 0 auto", whiteSpace: "nowrap" }}>{h.t}</span>}
           </div>
           <span style={{ fontSize: 14, fontWeight: 600, color: big ? "#97C459" : "var(--text)", flex: "0 0 auto", marginLeft: 8 }}>{fmtK(d.value)}</span>
         </div>
@@ -183,6 +187,17 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
           <span style={{ fontSize: 12, color: "var(--text3)" }}>{d.days_in_stage != null ? d.days_in_stage + "d in stage" : ""}</span>
           <span title={d.owner || ""} style={{ width: 23, height: 23, borderRadius: "50%", background: "rgba(15,110,86,.28)", color: "var(--brand-bright)", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center" }}>{initials(d.owner)}</span>
         </div>
+        {isMobile && (
+          <div onClick={(e) => e.stopPropagation()} style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--border)" }}>
+            <div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 5 }}>Move to stage</div>
+            <select
+              value={d.stage}
+              onChange={(e) => moveDeal(d.id, e.target.value)}
+              style={{ width: "100%", minHeight: 40, padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border2)", background: "var(--bg)", color: "var(--text)", fontFamily: "Inter", fontSize: 13.5, cursor: "pointer" }}>
+              {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+        )}
       </div>
     );
   };
@@ -215,8 +230,8 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
   const drawer = (selected != null) ? createPortal(
     <>
       <div onClick={close} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 9998 }} />
-      <div style={{ position: "fixed", top: 0, right: 0, height: "100vh", width: 560, maxWidth: "92vw", background: "var(--card)", borderLeft: "1px solid var(--border2)", zIndex: 9999, overflowY: "auto", fontFamily: "Inter", boxShadow: "-8px 0 30px rgba(0,0,0,0.5)" }}>
-        <div style={{ padding: "24px 26px" }}>
+      <div style={{ position: "fixed", top: 0, right: 0, height: "100dvh", width: isMobile ? "100vw" : 560, maxWidth: isMobile ? "100vw" : "92vw", background: "var(--card)", borderLeft: isMobile ? "none" : "1px solid var(--border2)", zIndex: 9999, overflowY: "auto", fontFamily: "Inter", boxShadow: isMobile ? "none" : "-8px 0 30px rgba(0,0,0,0.5)" }}>
+        <div style={{ padding: isMobile ? "18px 18px 34px" : "24px 26px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <div style={{ fontSize: 20, fontWeight: 600, color: "var(--text)" }}>{selected === "new" ? "New deal" : (draft.company || "Deal")}</div>
             <button onClick={close} style={{ background: "transparent", border: "none", color: "var(--text3)", fontSize: 26, cursor: "pointer", lineHeight: 1, padding: 0 }}>×</button>
@@ -340,9 +355,9 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
         <div style={{ fontFamily: "Inter", fontSize: 32, fontWeight: 600, color: "var(--text)", letterSpacing: -0.5 }}>Pipeline</div>
         <button onClick={openNew} style={{ background: "var(--cyan)", color: "#fff", border: "none", fontFamily: "Inter", fontSize: 14, fontWeight: 600, padding: "9px 16px", borderRadius: 9, cursor: "pointer" }}>+ New deal</button>
       </div>
-      <div style={{ color: "var(--text2)", fontSize: 15, marginBottom: 20 }}>Drag deals between stages · {fmtBig(openValue)} open across pipeline</div>
+      <div style={{ color: "var(--text2)", fontSize: 15, marginBottom: 20 }}>{isMobile ? "Tap a deal to open it, or move it to a stage below" : "Drag deals between stages"} · {fmtBig(openValue)} open across pipeline</div>
 
-      <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 10 }}>
+      <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 10, WebkitOverflowScrolling: "touch" }}>
         {STAGES.map(column)}
       </div>
 

@@ -15,6 +15,7 @@ import AICopilotPanel from "./components/AICopilotPanel";
 import CommandPalette from "./components/CommandPalette";
 import NotificationCenter from "./components/NotificationCenter";
 import ChatWidget from "./components/ChatWidget";
+import useBreakpoint from "./hooks/useBreakpoint";
 import "./App.css";
 
 const API =
@@ -39,6 +40,7 @@ const SUN = (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke=
 const MOON = (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>);
 
 export default function App() {
+  const { isMobile } = useBreakpoint();
   const [page, setPage] = useState("dashboard");
   const [uploaded, setUploaded] = useState(true);
   const [collapsed, setCollapsed] = useState(() => {
@@ -51,6 +53,16 @@ export default function App() {
   const [cmdKOpen, setCmdKOpen] = useState(false);
   const [pageAction, setPageAction] = useState(null);
   const [openDealId, setOpenDealId] = useState(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => { if (!isMobile) setMobileNavOpen(false); }, [isMobile]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const handler = (e) => { if (e.key === "Escape") setMobileNavOpen(false); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [mobileNavOpen]);
 
   const openDealInPipeline = (dealId) => { setPage("journey"); setOpenDealId(dealId); };
 
@@ -139,90 +151,145 @@ export default function App() {
     fontFamily: "Inter", fontSize: 14, fontWeight: 500, cursor: "pointer", marginTop: 8,
   };
 
-  const renderTab = (tab, active) => (
-    <button key={tab.id} onClick={() => setPage(tab.id)} title={collapsed ? tab.label : ""}
-      style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: collapsed ? "center" : "flex-start",
-        padding: collapsed ? "10px 0" : "10px 12px", borderRadius: 9, border: "none", cursor: "pointer",
-        background: active ? "rgba(15,110,86,0.18)" : "transparent",
-        color: active ? "var(--brand-bright)" : "var(--text2)", fontFamily: "Inter", fontSize: 14.5, fontWeight: 500,
-        whiteSpace: "nowrap", width: "100%", textAlign: "left", transition: "background .12s" }}
-      onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = "var(--hover2)"; }}
-      onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}>
-      <span style={{ display: "flex", flex: "0 0 auto" }}>{ICONS[tab.id]}</span>
-      {!collapsed && tab.label}
-    </button>
+  const renderTab = (tab, active, { forceExpanded = false, onAfterSelect } = {}) => {
+    const expanded = forceExpanded || !collapsed;
+    return (
+      <button key={tab.id} onClick={() => { setPage(tab.id); if (onAfterSelect) onAfterSelect(); }}
+        title={expanded ? "" : tab.label} aria-label={tab.label}
+        style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: expanded ? "flex-start" : "center",
+          padding: expanded ? "10px 12px" : "10px 0", borderRadius: 9, border: "none", cursor: "pointer",
+          background: active ? "rgba(15,110,86,0.18)" : "transparent",
+          color: active ? "var(--brand-bright)" : "var(--text2)", fontFamily: "Inter", fontSize: 14.5, fontWeight: 500,
+          whiteSpace: "nowrap", width: "100%", textAlign: "left", transition: "background .12s" }}
+        onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = "var(--hover2)"; }}
+        onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}>
+        <span style={{ display: "flex", flex: "0 0 auto" }}>{ICONS[tab.id]}</span>
+        {expanded && tab.label}
+      </button>
+    );
+  };
+
+  const sidebarFooter = (afterClick) => (
+    <>
+      <button onClick={() => { setCmdKOpen(true); if (afterClick) afterClick(); }} title={collapsed && !afterClick ? "Search (Ctrl+K)" : ""}
+        style={{ ...ghostBtn, marginTop: 0, border: "1px solid var(--border2)" }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover2)")}
+        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+        <span style={{ display: "flex", flex: "0 0 auto" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        {(afterClick || !collapsed) && <span style={{ flex: 1, textAlign: "left" }}>Search</span>}
+        {(afterClick || !collapsed) && <span style={{ fontSize: 11, color: "var(--text3)", background: "var(--bg)", padding: "2px 6px", borderRadius: 4 }}>Ctrl+K</span>}
+      </button>
+
+      <button onClick={toggleTheme} title={collapsed && !afterClick ? (theme === "dark" ? "Light mode" : "Dark mode") : ""} aria-label="Toggle theme"
+        style={ghostBtn}
+        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover2)")}
+        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+        <span style={{ display: "flex", flex: "0 0 auto" }}>{theme === "dark" ? SUN : MOON}</span>
+        {(afterClick || !collapsed) && (theme === "dark" ? "Light mode" : "Dark mode")}
+      </button>
+
+      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setUploaded(false); if (afterClick) afterClick(); }}
+        title={collapsed && !afterClick ? "Change data" : ""} aria-label="Change data"
+        style={ghostBtn}
+        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover2)")}
+        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+        <span style={{ display: "flex", flex: "0 0 auto" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4"/><polyline points="7 9 12 4 17 9"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg>
+        </span>
+        {(afterClick || !collapsed) && "Change data"}
+      </motion.button>
+    </>
+  );
+
+  const sidebarBrand = (size = 32) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+      <div style={{ width: size, height: size, flex: "0 0 auto", borderRadius: 9, background: "var(--cyan)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <svg width={size / 2} height={size / 2} viewBox="0 0 24 24" fill="#ffffff" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>
+      </div>
+      <div style={{ fontSize: 16, fontWeight: 600, color: "var(--logo-text)" }}>RetainIQ</div>
+    </div>
   );
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "var(--bg)", color: "var(--text)", fontFamily: "Inter" }}>
-      <aside style={{ width: SIDEBAR_W, flex: "0 0 auto", background: "var(--sidebar)", borderRight: "1px solid var(--border)", padding: collapsed ? "16px 9px" : "16px 14px", transition: "width .22s ease, padding .22s ease", display: "flex", flexDirection: "column", height: "100%", boxSizing: "border-box" }}>
+    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", height: "100dvh", overflow: "hidden", background: "var(--bg)", color: "var(--text)", fontFamily: "Inter" }}>
+      {isMobile ? (
+        <>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderBottom: "1px solid var(--border)", background: "var(--sidebar)", flex: "0 0 auto" }}>
+            <button onClick={() => setMobileNavOpen(true)} aria-label="Open navigation"
+              style={{ background: "transparent", border: "none", color: "var(--text2)", cursor: "pointer", padding: 6, borderRadius: 8, display: "flex", lineHeight: 0 }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            {sidebarBrand(28)}
+          </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : "space-between", marginBottom: 22 }}>
-          {!collapsed && (
-            <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-              <div style={{ width: 32, height: 32, flex: "0 0 auto", borderRadius: 9, background: "var(--cyan)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="#ffffff" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>
-              </div>
-              <div style={{ fontSize: 16, fontWeight: 600, color: "var(--logo-text)" }}>RetainIQ</div>
-            </div>
+          {mobileNavOpen && (
+            <>
+              <div onClick={() => setMobileNavOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 9998 }} />
+              <aside style={{ position: "fixed", top: 0, left: 0, height: "100dvh", width: 262, maxWidth: "84vw", background: "var(--sidebar)", borderRight: "1px solid var(--border)", zIndex: 9999, padding: "16px 14px", display: "flex", flexDirection: "column", boxShadow: "8px 0 30px rgba(0,0,0,0.5)", boxSizing: "border-box", overflowY: "auto" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
+                  {sidebarBrand(32)}
+                  <button onClick={() => setMobileNavOpen(false)} aria-label="Close navigation"
+                    style={{ background: "transparent", border: "none", color: "var(--text3)", cursor: "pointer", padding: 6, borderRadius: 8, display: "flex", lineHeight: 0, flex: "0 0 auto" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover2)"; e.currentTarget.style.color = "var(--text2)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text3)"; }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                </div>
+
+                <nav style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  {mainTabs.map(tab => renderTab(tab, page === tab.id, { forceExpanded: true, onAfterSelect: () => setMobileNavOpen(false) }))}
+                </nav>
+
+                <div style={{ height: 1, background: "var(--border)", margin: "14px 0" }} />
+
+                <nav style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  {aiTabs.map(tab => renderTab(tab, page === tab.id, { forceExpanded: true, onAfterSelect: () => setMobileNavOpen(false) }))}
+                </nav>
+
+                <div style={{ flex: 1 }} />
+
+                {sidebarFooter(() => setMobileNavOpen(false))}
+              </aside>
+            </>
           )}
-          <button onClick={toggleSidebar} title={collapsed ? "Expand sidebar" : "Collapse sidebar"} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            style={{ background: "transparent", border: "none", color: "var(--text3)", cursor: "pointer", padding: 6, borderRadius: 8, display: "flex", lineHeight: 0, flex: "0 0 auto" }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover2)"; e.currentTarget.style.color = "var(--text2)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text3)"; }}>
-            {collapsed ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="9" y1="4" x2="9" y2="20"/><polyline points="13 9 15 12 13 15"/></svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="9" y1="4" x2="9" y2="20"/><polyline points="15 9 13 12 15 15"/></svg>
-            )}
-          </button>
-        </div>
+        </>
+      ) : (
+        <aside style={{ width: SIDEBAR_W, flex: "0 0 auto", background: "var(--sidebar)", borderRight: "1px solid var(--border)", padding: collapsed ? "16px 9px" : "16px 14px", transition: "width .22s ease, padding .22s ease", display: "flex", flexDirection: "column", height: "100%", boxSizing: "border-box" }}>
 
-        <nav style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          {mainTabs.map(tab => renderTab(tab, page === tab.id))}
-        </nav>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : "space-between", marginBottom: 22 }}>
+            {!collapsed && sidebarBrand(32)}
+            <button onClick={toggleSidebar} title={collapsed ? "Expand sidebar" : "Collapse sidebar"} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              style={{ background: "transparent", border: "none", color: "var(--text3)", cursor: "pointer", padding: 6, borderRadius: 8, display: "flex", lineHeight: 0, flex: "0 0 auto" }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover2)"; e.currentTarget.style.color = "var(--text2)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text3)"; }}>
+              {collapsed ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="9" y1="4" x2="9" y2="20"/><polyline points="13 9 15 12 13 15"/></svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="9" y1="4" x2="9" y2="20"/><polyline points="15 9 13 12 15 15"/></svg>
+              )}
+            </button>
+          </div>
 
-        {!collapsed && <div style={{ height: 1, background: "var(--border)", margin: "14px 0" }} />}
-        {collapsed && <div style={{ height: 1, background: "var(--border)", margin: "14px 4px" }} />}
+          <nav style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {mainTabs.map(tab => renderTab(tab, page === tab.id))}
+          </nav>
 
-        <nav style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          {aiTabs.map(tab => renderTab(tab, page === tab.id))}
-        </nav>
+          {!collapsed && <div style={{ height: 1, background: "var(--border)", margin: "14px 0" }} />}
+          {collapsed && <div style={{ height: 1, background: "var(--border)", margin: "14px 4px" }} />}
 
-        <div style={{ flex: 1 }} />
+          <nav style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {aiTabs.map(tab => renderTab(tab, page === tab.id))}
+          </nav>
 
-        <button onClick={() => setCmdKOpen(true)} title={collapsed ? "Search (Ctrl+K)" : ""}
-          style={{ ...ghostBtn, marginTop: 0, border: "1px solid var(--border2)" }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover2)")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-          <span style={{ display: "flex", flex: "0 0 auto" }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          </span>
-          {!collapsed && <span style={{ flex: 1, textAlign: "left" }}>Search</span>}
-          {!collapsed && <span style={{ fontSize: 11, color: "var(--text3)", background: "var(--bg)", padding: "2px 6px", borderRadius: 4 }}>Ctrl+K</span>}
-        </button>
+          <div style={{ flex: 1 }} />
 
-        <button onClick={toggleTheme} title={collapsed ? (theme === "dark" ? "Light mode" : "Dark mode") : ""} aria-label="Toggle theme"
-          style={ghostBtn}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover2)")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-          <span style={{ display: "flex", flex: "0 0 auto" }}>{theme === "dark" ? SUN : MOON}</span>
-          {!collapsed && (theme === "dark" ? "Light mode" : "Dark mode")}
-        </button>
+          {sidebarFooter()}
+        </aside>
+      )}
 
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setUploaded(false)}
-          title={collapsed ? "Change data" : ""} aria-label="Change data"
-          style={ghostBtn}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover2)")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-          <span style={{ display: "flex", flex: "0 0 auto" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4"/><polyline points="7 9 12 4 17 9"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg>
-          </span>
-          {!collapsed && "Change data"}
-        </motion.button>
-      </aside>
-
-      <main style={{ flex: 1, minWidth: 0, height: "100%", overflowY: "auto", padding: "28px 34px", position: "relative", paddingTop: 16 }}>
+      <main style={{ flex: 1, minWidth: 0, height: "100%", overflowY: "auto", padding: isMobile ? "16px 16px 28px" : "28px 34px", position: "relative", paddingTop: isMobile ? 4 : 16 }}>
         <div style={{ position: "sticky", top: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, zIndex: 10, paddingBottom: 8 }}>
           <NotificationCenter API={API} />
           <button onClick={() => setCopilotOpen(o => !o)}

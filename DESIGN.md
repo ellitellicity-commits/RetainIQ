@@ -153,6 +153,27 @@ The shell is a fixed-height, no-page-scroll application frame: a collapsible lef
 
 KPI/stat rows use a 4-column grid (`repeat(4, 1fr)`, 14–16px gap) with each card entering on a staggered Framer Motion fade-up (`delay: i * 0.05`). Tables are full-width with a bordered, rounded (12px) wrapping container and a distinct header row. Client/deal detail opens as a right-side drawer that overlays the content column rather than navigating away.
 
+## Responsive Layout
+
+RetainIQ shipped desktop-only through its first several features; this section is the first documented responsive treatment, introduced for the mobile/responsive optimization pass. Treat it as a new, first-of-its-kind pattern the same way Charts (Recharts) and the AI Co-pilot Panel were when they were introduced — everything below is binding for new responsive work, not just descriptive of what exists.
+
+**Breakpoints** (`frontend/src/hooks/useBreakpoint.js`, `window.innerWidth`-based with a resize listener):
+- **Mobile**: ≤640px
+- **Tablet**: 641–1024px
+- **Desktop**: >1024px (the original, unchanged experience)
+
+Two tiers exist because several grids need a 4→2→1 or 3→2→1 collapse, not a single on/off switch.
+
+**Why a JS hook, not CSS media queries.** The existing, active design system is inline-style + CSS custom properties (see Do's and Don'ts) — there is no App.css class layer new work should extend. `useBreakpoint()` keeps responsive decisions in the same inline-style idiom every page already uses, and — critically — it can drive *structural* swaps (off-canvas nav vs. sidebar, a Kanban move-to-stage control vs. drag, a full-screen overlay vs. a fixed-width panel) that CSS media queries alone cannot express. Reach for plain CSS only for things that never need JS awareness (e.g. a bare font-size tweak); default to the hook for anything else.
+
+**Navigation.** Below the mobile breakpoint, the persistent sidebar is replaced by an off-canvas drawer behind a hamburger trigger in a new mobile top bar. This is a straight reskin, not a new nav concept: the drawer renders the same `mainTabs`/`aiTabs` arrays and the same `renderTab` logic already in `App.js`, just behind a different trigger. The existing icon-only collapsed sidebar (66px) remains a desktop-only space-saving toggle — it is not the mobile nav pattern, and was never meant to be one.
+
+**Overlays and panels.** Fixed-width panels (`ChatWidget`, `AICopilotPanel`, the client/deal detail drawer) become full-screen takeovers below the mobile breakpoint rather than shrinking in place — a 380px chat panel or a 560px drawer has no legible smaller version on a 360–390px phone viewport. `NotificationCenter`'s dropdown instead clamps to `min(360px, calc(100vw - 24px))` since it's a small anchored popover, not a primary task surface. All overlay/panel z-index values share one scale (the drawer/palette scale already used in `Journey.js`/`Customers.js`) so multiple full-screen takeovers can never silently collide.
+
+**Tables.** Wrap in `overflowX: auto`, never `overflow: hidden` — the same horizontal-scroll pattern already used for the Kanban board and a few other flex rows, just applied consistently to data tables too.
+
+**Kanban board.** Native HTML5 drag-and-drop (`draggable`/`onDragStart`/`onDrop`) does not fire on touch at all. Below the mobile breakpoint, each deal card gets an explicit "Move to stage" control as a first-class action — not a fallback bolted on after the fact, and not a replacement for desktop drag.
+
 ## Elevation & Depth
 
 The system is mostly flat, with shadow reserved to separate resting content from floating overlays — not used as general decoration.

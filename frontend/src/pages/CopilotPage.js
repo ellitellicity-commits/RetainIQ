@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import RelationshipMap from "../components/RelationshipMap";
 import { DEAL_INSIGHTS, MEETING_PREPS, RELATIONSHIP_MAP, NEXT_BEST_ACTIONS } from "../data/mockData";
+import useBreakpoint from "../hooks/useBreakpoint";
 
 const ICONS = {
   sparkle: (
@@ -39,6 +40,7 @@ function getWarmthLabel(warmth) {
 }
 
 export default function CopilotPage() {
+  const { isMobile } = useBreakpoint();
   const [selectedMapIndex, setSelectedMapIndex] = useState(0);
   const [selectedMeetingCompany, setSelectedMeetingCompany] = useState(Object.keys(MEETING_PREPS)[0]);
 
@@ -57,11 +59,11 @@ export default function CopilotPage() {
   return (
     <div
       style={{
-        padding: "32px 40px",
+        padding: isMobile ? "8px 4px 24px" : "32px 40px",
         maxWidth: 1100,
         margin: "0 auto",
         overflowY: "auto",
-        minHeight: "100vh",
+        minHeight: "100dvh",
       }}
     >
       {/* ===== SECTION 1: HEADER ===== */}
@@ -87,7 +89,7 @@ export default function CopilotPage() {
         </p>
 
         {/* Stat cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 16 }}>
           <StatCard label="Active Insights" value={DEAL_INSIGHTS.length} color="var(--cyan)" />
           <StatCard label="Actions Pending" value={NEXT_BEST_ACTIONS.length} color="var(--amber)" />
           <StatCard label="Avg Confidence" value={`${avgConfidence}%`} color="var(--green)" />

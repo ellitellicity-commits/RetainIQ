@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import useBreakpoint from "../hooks/useBreakpoint";
 
 const ICONS = {
   sparkle: (
@@ -102,6 +103,7 @@ function ActionProposalCard({ msg, onConfirm, onCancel }) {
 }
 
 export default function ChatWidget({ API }) {
+  const { isMobile } = useBreakpoint();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -224,7 +226,20 @@ export default function ChatWidget({ API }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            style={{
+            style={isMobile ? {
+              position: "fixed",
+              inset: 0,
+              width: "100vw",
+              height: "100dvh",
+              background: "var(--card)",
+              border: "none",
+              borderRadius: 0,
+              boxShadow: "none",
+              zIndex: 9999,
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            } : {
               position: "fixed",
               bottom: 88,
               right: 24,

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import TaskList from "../components/TaskList";
 import { TASKS } from "../data/mockData";
+import useBreakpoint from "../hooks/useBreakpoint";
 
 const REPS = ["Priya Sharma", "Marcus Reid", "Aisha Khan", "David Chen"];
 const DEALS = ["RBC Bank", "TD Bank", "Bell Canada", "Sun Life Financial", "Loblaw Companies", "Telus Corporation", "Manulife", "Rogers Communications", "Scotiabank", "CIBC"];
@@ -8,6 +9,7 @@ const PRIORITIES = ["critical", "high", "medium", "low"];
 const TYPES = ["follow-up", "call", "meeting", "document", "preparation", "research", "onboarding", "review"];
 
 export default function Tasks({ pageAction, clearAction }) {
+  const { isMobile, isTablet } = useBreakpoint();
   const [tasks, setTasks] = useState(TASKS);
   const [filter, setFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
@@ -111,7 +113,7 @@ export default function Tasks({ pageAction, clearAction }) {
       </div>
 
       {/* Stats Row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 22 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: 14, marginBottom: 22 }}>
         {stats.map(s => (
           <div key={s.label} style={{
             background: "var(--card)", border: "1px solid var(--border2)", borderRadius: "var(--radius)",
@@ -149,12 +151,12 @@ export default function Tasks({ pageAction, clearAction }) {
       {showForm && (
         <>
           <div onClick={() => setShowForm(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9998 }} />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 440, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 14, padding: 28, zIndex: 9999, boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 440, maxWidth: "92vw", maxHeight: "90dvh", overflowY: "auto", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 14, padding: isMobile ? 20 : 28, zIndex: 9999, boxShadow: "0 20px 60px rgba(0,0,0,0.3)", boxSizing: "border-box" }}>
             <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text)", marginBottom: 20 }}>New Task</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <input placeholder="Task title" value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} autoFocus
                 style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid var(--border2)", background: "var(--bg)", color: "var(--text)", fontSize: 14, fontFamily: "Inter", outline: "none", boxSizing: "border-box" }} />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
                 <div>
                   <label style={{ fontSize: 11, color: "var(--text3)", marginBottom: 4, display: "block" }}>Due date</label>
                   <input type="date" value={newTask.dueDate} onChange={e => setNewTask({ ...newTask, dueDate: e.target.value })}

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import ActivityTimeline from "../components/ActivityTimeline";
 import NoteEditor from "../components/NoteEditor";
 import { NOTES } from "../data/mockData";
+import useBreakpoint from "../hooks/useBreakpoint";
 
 const fmtMoney = (v) =>
   v === null || v === undefined || v === "" ? "—" : "$" + Number(v).toLocaleString();
@@ -36,8 +37,10 @@ const ctrl = {
 
 const cfield = { width: "100%", padding: "8px 11px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontFamily: "Inter", fontSize: 13.5, outline: "none", boxSizing: "border-box", marginBottom: 8 };
 const iconBtn = { background: "transparent", border: "1px solid var(--border2)", color: "var(--text3)", fontFamily: "Inter", fontSize: 12.5, padding: "4px 10px", borderRadius: 7, cursor: "pointer" };
+const iconBtnMobile = { ...iconBtn, padding: "9px 12px", minHeight: 36 };
 
 export default function Clients({ API, pageAction, clearAction }) {
+  const { isMobile } = useBreakpoint();
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState("expiry");
@@ -68,6 +71,7 @@ export default function Clients({ API, pageAction, clearAction }) {
 
   // Drawer tabs
   const [drawerTab, setDrawerTab] = useState("details");
+  const [detailsSubTab, setDetailsSubTab] = useState("overview");
 
   useEffect(() => {
     fetch(`${API}/api/db/clients`).then(r => r.json()).then(setClients).catch(() => setClients([]));
@@ -179,7 +183,7 @@ export default function Clients({ API, pageAction, clearAction }) {
   const openClient = (c) => {
     setSelected(c); setEmail(null);
     setContacts([]); setContactForm(null); setSelectedContactId("");
-    setQuotes([]); setActivities([]); setLogForm(null); setDrawerTab("details");
+    setQuotes([]); setActivities([]); setLogForm(null); setDrawerTab("details"); setDetailsSubTab("overview");
     loadContacts(c.id);
     loadQuotes(nameOf(c));
     loadActivities(c.id);
@@ -249,8 +253,9 @@ export default function Clients({ API, pageAction, clearAction }) {
       .finally(() => setContactSaving(false));
   };
 
-  const deleteContact = (id) => {
+  const deleteContact = (id, name) => {
     if (!selected) return;
+    if (!window.confirm(`Delete ${name || "this contact"}? This can't be undone.`)) return;
     fetch(`${API}/api/db/contacts/${id}`, { method: "DELETE" })
       .then(() => loadContacts(selected.id))
       .catch(() => {});
@@ -328,11 +333,11 @@ export default function Clients({ API, pageAction, clearAction }) {
       <motion.div
         initial={{ x: 480 }} animate={{ x: 0 }} transition={{ type: "tween", duration: 0.25 }}
         style={{
-          position: "fixed", top: 0, right: 0, height: "100vh", width: 560, maxWidth: "92vw",
-          background: "var(--card)", borderLeft: "1px solid var(--border2)", zIndex: 9999,
-          overflowY: "auto", fontFamily: "Inter", boxShadow: "-8px 0 30px rgba(0,0,0,0.5)",
+          position: "fixed", top: 0, right: 0, height: "100dvh", width: isMobile ? "100vw" : 560, maxWidth: isMobile ? "100vw" : "92vw",
+          background: "var(--card)", borderLeft: isMobile ? "none" : "1px solid var(--border2)", zIndex: 9999,
+          overflowY: "auto", fontFamily: "Inter", boxShadow: isMobile ? "none" : "-8px 0 30px rgba(0,0,0,0.5)",
         }}>
-        <div style={{ padding: "24px 34px" }}>
+        <div style={{ padding: isMobile ? "18px 18px 34px" : "24px 34px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
             <div>
               <div style={{ fontSize: 22, fontWeight: 600, color: "var(--text)" }}>{nameOf(selected)}</div>
@@ -397,7 +402,20 @@ export default function Clients({ API, pageAction, clearAction }) {
           )}
 
           {drawerTab === "details" && <>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 18px", padding: "18px 0", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}>
+          <div style={{ display: "flex", gap: 4, marginTop: 16, marginBottom: 4, flexWrap: "wrap" }}>
+            {[["overview", "Overview"], ["contacts", "Contacts"], ["quotes", "Quotes"], ["email", "AI Email"]].map(([id, label]) => (
+              <button key={id} onClick={() => setDetailsSubTab(id)}
+                style={{ padding: "6px 13px", fontSize: 12.5, fontWeight: 500, fontFamily: "Inter", cursor: "pointer",
+                  border: "1px solid " + (detailsSubTab === id ? "var(--cyan)" : "var(--border2)"), borderRadius: 999,
+                  background: detailsSubTab === id ? "var(--cyan-dim)" : "transparent",
+                  color: detailsSubTab === id ? "var(--cyan)" : "var(--text2)" }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {detailsSubTab === "overview" && (
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "14px 18px", padding: "18px 0", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}>
             {[
               ["Software", selected.software || "—"],
               ["Vendor", selected.vendor || "—"],
@@ -414,9 +432,11 @@ export default function Clients({ API, pageAction, clearAction }) {
               </div>
             ))}
           </div>
+          )}
 
           {/* Contacts */}
-          <div style={{ marginTop: 22 }}>
+          {detailsSubTab === "contacts" && (
+          <div style={{ marginTop: 6 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
               <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)" }}>Contacts</div>
               {!contactForm && (
@@ -447,8 +467,8 @@ export default function Clients({ API, pageAction, clearAction }) {
                       {ct.phone ? <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 2 }}>{ct.phone}</div> : null}
                     </div>
                     <div style={{ display: "flex", gap: 6, flex: "0 0 auto", marginLeft: 8 }}>
-                      <button onClick={() => openEditContact(ct)} style={iconBtn}>Edit</button>
-                      <button onClick={() => deleteContact(ct.id)} style={iconBtn}>Delete</button>
+                      <button onClick={() => openEditContact(ct)} style={isMobile ? iconBtnMobile : iconBtn}>Edit</button>
+                      <button onClick={() => deleteContact(ct.id, ct.name)} style={isMobile ? iconBtnMobile : iconBtn}>Delete</button>
                     </div>
                   </div>
                 </div>
@@ -457,9 +477,11 @@ export default function Clients({ API, pageAction, clearAction }) {
 
             {contactForm && !contactForm.id && contactFormEl}
           </div>
+          )}
 
           {/* Quotes (read-only) */}
-          <div style={{ marginTop: 22 }}>
+          {detailsSubTab === "quotes" && (
+          <div style={{ marginTop: 6 }}>
             <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 4 }}>Quotes</div>
             <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 12 }}>Quotes raised for this company in Pipeline.</div>
 
@@ -485,9 +507,11 @@ export default function Clients({ API, pageAction, clearAction }) {
               );
             })}
           </div>
+          )}
 
           {/* AI email */}
-          <div style={{ marginTop: 22 }}>
+          {detailsSubTab === "email" && (
+          <div style={{ marginTop: 6 }}>
             <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 4 }}>AI renewal email</div>
             <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 14 }}>Generated by LLaMA via Groq, personalized to this client.</div>
 
@@ -532,7 +556,8 @@ export default function Clients({ API, pageAction, clearAction }) {
                 </div>
               </div>
             )}
-          </div></>}
+          </div>
+          )}</>}
         </div>
       </motion.div>
     </>,
@@ -591,8 +616,8 @@ export default function Clients({ API, pageAction, clearAction }) {
         <div style={{ marginLeft: "auto", fontSize: 14, color: "var(--text3)" }}>{list.length} clients</div>
       </div>
 
-      <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "Inter" }}>
+      <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <table style={{ width: "100%", minWidth: 720, borderCollapse: "collapse", fontFamily: "Inter" }}>
           <thead>
             <tr style={{ background: "var(--card)" }}>
               <th style={th}>Client</th>

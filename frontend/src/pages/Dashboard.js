@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import useBreakpoint from "../hooks/useBreakpoint";
 
 const fmtMoney = (v) => "$" + Number(v || 0).toLocaleString();
 const fmtBig = (v) => {
@@ -24,6 +25,8 @@ const th = { textAlign: "left", padding: "13px 16px", color: "var(--text2)", fon
 const td = { padding: "15px 16px", color: "var(--text)" };
 
 export default function Dashboard({ API }) {
+  const { isMobile, isTablet } = useBreakpoint();
+  const kpiColumns = isMobile ? "1fr" : isTablet ? "repeat(2,1fr)" : "repeat(4,1fr)";
   const [stats, setStats] = useState(null);
   const [customers, setCustomers] = useState([]);
   const [filter, setFilter] = useState("all");
@@ -60,7 +63,7 @@ export default function Dashboard({ API }) {
         <div style={{ color: "var(--text2)", fontSize: 15, marginTop: 6 }}>Contract renewal overview · Digital Move IT &amp; Telecom</div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 26 }}>
+      <div style={{ display: "grid", gridTemplateColumns: kpiColumns, gap: 16, marginBottom: 26 }}>
         {cards.map((c, i) => (
           <motion.div key={c.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
             style={{ background: "var(--card)", border: "1px solid var(--border2)", borderRadius: 14, padding: "22px 24px", boxShadow: "0 2px 14px rgba(0,0,0,0.38)" }}>
@@ -70,7 +73,7 @@ export default function Dashboard({ API }) {
         ))}
       </div>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "center" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "center", flexWrap: "wrap" }}>
         {[["all", "All"], ["critical", "Critical"], ["atrisk", "At Risk"], ["healthy", "Healthy"]].map(([id, label]) => (
           <button key={id} onClick={() => setFilter(id)}
             style={{ padding: "8px 18px", borderRadius: 999,
@@ -84,8 +87,8 @@ export default function Dashboard({ API }) {
         <div style={{ marginLeft: "auto", fontSize: 14, color: "var(--text3)" }}>{filtered.length} clients</div>
       </div>
 
-      <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "Inter", fontSize: 16 }}>
+      <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", fontFamily: "Inter", fontSize: 16 }}>
           <thead>
             <tr style={{ background: "var(--card)" }}>
               <th style={th}>Client</th>
