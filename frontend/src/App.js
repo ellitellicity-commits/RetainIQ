@@ -14,6 +14,7 @@ import Automations from "./pages/Automations";
 import AICopilotPanel from "./components/AICopilotPanel";
 import CommandPalette from "./components/CommandPalette";
 import NotificationCenter from "./components/NotificationCenter";
+import ChatWidget from "./components/ChatWidget";
 import "./App.css";
 
 const API =
@@ -247,6 +248,7 @@ export default function App() {
 
       <AICopilotPanel open={copilotOpen} onClose={() => setCopilotOpen(false)} />
       <CommandPalette open={cmdKOpen} onClose={() => setCmdKOpen(false)} onNavigate={handleCmdNavigate} />
+      <ChatWidget API={API} />
     </div>
   );
 }

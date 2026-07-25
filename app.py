@@ -19,6 +19,8 @@ from activities_api import activities_bp
 app.register_blueprint(activities_bp)
 from notifications_api import notifications_bp
 app.register_blueprint(notifications_bp)
+from chatbot_api import chatbot_bp
+app.register_blueprint(chatbot_bp)
 
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
