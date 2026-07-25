@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { EMAIL_SEQUENCES } from "../data/mockData";
+import useBreakpoint from "../hooks/useBreakpoint";
 
 export default function EmailSequences() {
+  const { isMobile } = useBreakpoint();
   const [sequences, setSequences] = useState(EMAIL_SEQUENCES);
   const [showForm, setShowForm] = useState(false);
   const [newSeq, setNewSeq] = useState({ name: "", steps: [{ day: 0, type: "email", subject: "" }] });
@@ -119,7 +121,7 @@ export default function EmailSequences() {
       </div>
 
       {/* Stats Row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 26 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 14, marginBottom: 26 }}>
         {stats.map(s => (
           <div key={s.label} style={{
             background: "var(--card)", border: "1px solid var(--border2)", borderRadius: "var(--radius)",
@@ -231,7 +233,7 @@ export default function EmailSequences() {
       {showForm && (
         <>
           <div onClick={() => setShowForm(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9998 }} />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 520, maxHeight: "80vh", overflowY: "auto", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 14, padding: 28, zIndex: 9999, boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 520, maxWidth: "92vw", maxHeight: "80dvh", overflowY: "auto", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 14, padding: isMobile ? 20 : 28, zIndex: 9999, boxShadow: "0 20px 60px rgba(0,0,0,0.3)", boxSizing: "border-box" }}>
             <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text)", marginBottom: 20 }}>New Email Sequence</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
