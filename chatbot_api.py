@@ -1,4 +1,4 @@
-import os, json, sqlite3
+import os, json, re, sqlite3
 import httpx
 from flask import Blueprint, request, jsonify, current_app
 from activities_api import log_activity
@@ -203,6 +203,13 @@ def _tavily_search(query):
             return None
 
 
+_RAW_TOOL_CALL_RE = re.compile(r'</?function\b|function_call|"tool_calls"', re.IGNORECASE)
+
+
+def _looks_like_raw_tool_call(text):
+    return bool(text) and bool(_RAW_TOOL_CALL_RE.search(text))
+
+
 def _sanitize_history(history):
     out = []
     for m in (history or [])[-10:]:
@@ -226,27 +233,44 @@ def chatbot():
         + [{"role": "user", "content": message}]
     )
 
-    try:
-        client = _groq_client()
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=messages,
-            tools=TOOLS,
-            tool_choice="auto",
-            max_tokens=600,
-        )
-    except Exception as e:
-        print("[chatbot] Groq call failed:", e)
+    client = _groq_client()
+    msg = None
+    tool_calls = None
+    for attempt in range(2):
+        try:
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=messages,
+                tools=TOOLS,
+                tool_choice="auto",
+                max_tokens=600,
+            )
+        except Exception as e:
+            print("[chatbot] Groq call failed:", e)
+            # tool_use_failed is Llama 3.3 mangling a tool call, not a real outage --
+            # worth the one retry already budgeted here rather than failing immediately.
+            if attempt == 0 and "tool_use_failed" in str(e):
+                continue
+            msg = None
+            break
+        msg = response.choices[0].message
+        tool_calls = getattr(msg, "tool_calls", None)
+        # Llama 3.3 occasionally hallucinates function-call syntax as plain text
+        # instead of a real tool call -- retry once rather than leaking it to the user.
+        if tool_calls or not _looks_like_raw_tool_call(msg.content):
+            break
+
+    if msg is None:
         return jsonify({
             "type": "answer",
             "content": "I'm having trouble reaching the AI service right now -- try again in a moment.",
         })
 
-    msg = response.choices[0].message
-    tool_calls = getattr(msg, "tool_calls", None)
-
     if not tool_calls:
-        return jsonify({"type": "answer", "content": msg.content or "I don't have an answer for that."})
+        content = msg.content or "I don't have an answer for that."
+        if _looks_like_raw_tool_call(content):
+            content = "I ran into trouble putting that answer together -- try rephrasing your question."
+        return jsonify({"type": "answer", "content": content})
 
     call = tool_calls[0]
     try:
