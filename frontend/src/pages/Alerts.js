@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import useBreakpoint from "../hooks/useBreakpoint";
 
 const PROB = { "New Leads": 0.10, "Qualified": 0.25, "Demo": 0.40, "Quote sent": 0.60, "Negotiation": 0.80 };
 const OPEN_STAGES = ["New Leads", "Qualified", "Demo", "Quote sent", "Negotiation"];
@@ -22,6 +23,8 @@ function RetentionTooltip({ active, payload, label }) {
 }
 
 export default function Analytics({ API }) {
+  const { isMobile, isTablet } = useBreakpoint();
+  const kpiColumns = isMobile ? "1fr" : isTablet ? "repeat(2,1fr)" : "repeat(4,1fr)";
   const [deals, setDeals] = useState([]);
   const [retention, setRetention] = useState([]);
   const [horizon, setHorizon] = useState("3");
@@ -90,7 +93,7 @@ export default function Analytics({ API }) {
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22, flexWrap: "wrap", gap: 10 }}>
         <div>
           <div style={{ fontFamily: "Inter", fontSize: 32, fontWeight: 600, color: "var(--text)", letterSpacing: -0.5 }}>Analytics</div>
           <div style={{ color: "var(--text2)", fontSize: 15, marginTop: 6 }}>Sales performance &amp; forecast · Digital Move IT &amp; Telecom</div>
@@ -103,7 +106,7 @@ export default function Analytics({ API }) {
         </select>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 18 }}>
+      <div style={{ display: "grid", gridTemplateColumns: kpiColumns, gap: 14, marginBottom: 18 }}>
         {kpis.map(k => (
           <div key={k.label} style={card}>
             <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 8 }}>{k.label}</div>
@@ -118,7 +121,7 @@ export default function Analytics({ API }) {
             <div style={cardTitle}>Revenue forecast</div>
             {hasForecast ? (
               <>
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 16, height: 150 }}>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: isMobile ? 6 : 16, height: 150 }}>
                   {months.map((m, i) => (
                     <div key={m.key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%" }}>
                       <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)", marginBottom: 6 }}>{m.total > 0 ? fmtBig(m.total) : ""}</span>
@@ -126,7 +129,7 @@ export default function Analytics({ API }) {
                     </div>
                   ))}
                 </div>
-                <div style={{ display: "flex", gap: 16, marginTop: 8 }}>
+                <div style={{ display: "flex", gap: isMobile ? 6 : 16, marginTop: 8 }}>
                   {months.map(m => <span key={m.key} style={{ flex: 1, textAlign: "center", fontSize: 12, color: "var(--text2)" }}>{m.label}</span>)}
                 </div>
               </>
@@ -160,7 +163,7 @@ export default function Analytics({ API }) {
                   </defs>
                   <CartesianGrid vertical={false} stroke="var(--border)" />
                   <XAxis dataKey="month" tick={tickStyle} axisLine={{ stroke: "var(--border)" }} tickLine={false}
-                    interval={horizon === "12" ? 1 : 0} />
+                    interval={isMobile ? 1 : (horizon === "12" ? 1 : 0)} />
                   <YAxis domain={retentionYDomain} tick={tickStyle} axisLine={false} tickLine={false} width={38}
                     tickFormatter={(v) => v + "%"} />
                   <Tooltip content={<RetentionTooltip />} cursor={{ stroke: "var(--border2)", strokeWidth: 1 }} />
