@@ -97,7 +97,7 @@ export default function NotificationCenter({ API }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.96 }}
             transition={{ duration: 0.15 }}
-            style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, width: 360, maxHeight: 480, overflowY: "auto", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.2)", zIndex: 1001 }}>
+            style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, width: "min(360px, calc(100vw - 24px))", maxHeight: 480, overflowY: "auto", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.2)", zIndex: 1001 }}>
             <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontWeight: 600, fontSize: 14 }}>Notifications</span>
               {unread > 0 && <button onClick={markAllRead} style={{ fontSize: 12, color: "var(--brand-bright)", cursor: "pointer", background: "none", border: "none", fontFamily: "Inter", fontWeight: 500 }}>Mark all read</button>}
