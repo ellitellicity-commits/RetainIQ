@@ -149,7 +149,10 @@ export default function ChatWidget({ API }) {
       if (data.type === "action_proposal") {
         setMessages((m) => [...m, { role: "assistant", kind: "action_proposal", tool: data.tool, args: data.args, summary: data.summary, status: "pending" }]);
       } else {
-        setMessages((m) => [...m, { role: "assistant", kind: data.type || "answer", content: data.content }]);
+        setMessages((m) => [
+          ...m,
+          { role: "assistant", kind: data.type || "answer", content: data.content, searchedFor: data.searched_for, sources: data.sources },
+        ]);
       }
     } catch (e) {
       setMessages((m) => [...m, { role: "assistant", kind: "answer", content: "Something went wrong reaching the assistant." }]);
@@ -287,9 +290,32 @@ export default function ChatWidget({ API }) {
                 ) : (
                   <div
                     key={i}
-                    style={{ alignSelf: "flex-start", maxWidth: "92%", background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)", borderRadius: "12px 12px 12px 6px", padding: "10px 14px", fontSize: 13, lineHeight: 1.5, whiteSpace: "pre-wrap" }}
+                    style={{ alignSelf: "flex-start", maxWidth: "92%", background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)", borderRadius: "12px 12px 12px 6px", padding: "10px 14px", fontSize: 13, lineHeight: 1.5 }}
                   >
-                    {m.content}
+                    {m.searchedFor && (
+                      <div style={{ fontSize: 11, color: "var(--text3)", fontStyle: "italic", marginBottom: 6 }}>
+                        Searched the web for “{m.searchedFor}”
+                      </div>
+                    )}
+                    <div style={{ whiteSpace: "pre-wrap" }}>{m.content}</div>
+                    {m.sources && m.sources.length > 0 && (
+                      <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: 4 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", color: "var(--text3)" }}>
+                          Sources
+                        </div>
+                        {m.sources.map((s, si) => (
+                          <a
+                            key={si}
+                            href={s.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ fontSize: 11.5, color: "var(--cyan)", textDecoration: "none" }}
+                          >
+                            {s.title || s.url}
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )
               )}

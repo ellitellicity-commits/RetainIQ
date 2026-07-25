@@ -53,8 +53,9 @@ The React app runs on `http://localhost:3000` and proxies API calls to port 5000
 | Variable | Required | Purpose |
 |----------|----------|---------|
 | `GROQ_API_KEY` | For AI emails | Groq API key for LLaMA 3.3 70B email generation |
+| `TAVILY_API_KEY` | For chatbot web search | Tavily API key for the chatbot's `web_search` tool |
 
-If the key is missing, the email generator falls back to a template.
+If the key is missing, the email generator falls back to a template. If `TAVILY_API_KEY` is missing, the chatbot's `web_search` tool tells the user web search isn't available and falls back to CRM-only answers.
 
 ---
 
