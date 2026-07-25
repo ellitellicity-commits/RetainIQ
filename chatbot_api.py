@@ -1,4 +1,5 @@
-import os, json, sqlite3
+import os, json, re, sqlite3
+import httpx
 from flask import Blueprint, request, jsonify, current_app
 from activities_api import log_activity
 
@@ -19,7 +20,13 @@ widget, not a report.
 You can also take actions (log_activity, move_deal_stage, draft_email) via the tools provided,
 but ONLY call a tool when the user has clearly and explicitly asked for that action. A passing
 mention of a client or a deal is not a request to act. If a request is ambiguous about which
-client or deal it refers to, ask a clarifying question instead of guessing and calling a tool."""
+client or deal it refers to, ask a clarifying question instead of guessing and calling a tool.
+
+You also have a web_search tool for real-world grounding (news, funding, leadership changes,
+layoffs, or general "what does this company do" questions) that the CRM context can't answer.
+It's read-only, so no confirmation is needed to use it -- but default to the CRM context above
+first. Only search when a question genuinely needs information the CRM doesn't have; don't
+search for things already answered by the context or by prior turns in this conversation."""
 
 TOOLS = [
     {
@@ -64,6 +71,26 @@ TOOLS = [
                     "company": {"type": "string", "description": "The client's company name to draft the email for."},
                 },
                 "required": ["company"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "web_search",
+            "description": (
+                "Search the live web for real-world information the CRM's own data can't provide -- "
+                "recent news, funding rounds, layoffs, leadership changes for an at-risk client, or general "
+                "background on a company (e.g. what it does). Only call this when the CRM context already "
+                "given to you genuinely doesn't answer the question -- do not call it for anything about "
+                "clients, deals, activity, or KPIs that the CRM context already covers."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "The search query, e.g. 'Acme Corp layoffs 2026' or 'what does Acme Corp do'."},
+                },
+                "required": ["query"],
             },
         },
     },
@@ -140,6 +167,49 @@ def _groq_client():
     return Groq(api_key=os.environ.get("GROQ_API_KEY"), timeout=10.0, max_retries=1)
 
 
+def _tavily_search(query):
+    from dotenv import load_dotenv
+    load_dotenv()
+    api_key = os.environ.get("TAVILY_API_KEY")
+    if not api_key or not query:
+        return None
+
+    payload = {
+        "query": query,
+        "search_depth": "basic",
+        "max_results": 5,
+        "include_answer": True,
+    }
+    headers = {"Authorization": f"Bearer {api_key}"}
+
+    for attempt in range(2):
+        try:
+            resp = httpx.post("https://api.tavily.com/search", json=payload, headers=headers, timeout=10.0)
+            resp.raise_for_status()
+            data = resp.json()
+            results = [
+                {"title": r.get("title") or r.get("url"), "url": r.get("url"), "content": r.get("content") or ""}
+                for r in (data.get("results") or [])
+                if r.get("url")
+            ]
+            return {"answer": data.get("answer") or "", "results": results}
+        except (httpx.TimeoutException, httpx.ConnectError) as e:
+            if attempt == 0:
+                continue
+            print("[chatbot] Tavily search failed:", e)
+            return None
+        except Exception as e:
+            print("[chatbot] Tavily search failed:", e)
+            return None
+
+
+_RAW_TOOL_CALL_RE = re.compile(r'</?function\b|function_call|"tool_calls"', re.IGNORECASE)
+
+
+def _looks_like_raw_tool_call(text):
+    return bool(text) and bool(_RAW_TOOL_CALL_RE.search(text))
+
+
 def _sanitize_history(history):
     out = []
     for m in (history or [])[-10:]:
@@ -163,27 +233,44 @@ def chatbot():
         + [{"role": "user", "content": message}]
     )
 
-    try:
-        client = _groq_client()
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=messages,
-            tools=TOOLS,
-            tool_choice="auto",
-            max_tokens=600,
-        )
-    except Exception as e:
-        print("[chatbot] Groq call failed:", e)
+    client = _groq_client()
+    msg = None
+    tool_calls = None
+    for attempt in range(2):
+        try:
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=messages,
+                tools=TOOLS,
+                tool_choice="auto",
+                max_tokens=600,
+            )
+        except Exception as e:
+            print("[chatbot] Groq call failed:", e)
+            # tool_use_failed is Llama 3.3 mangling a tool call, not a real outage --
+            # worth the one retry already budgeted here rather than failing immediately.
+            if attempt == 0 and "tool_use_failed" in str(e):
+                continue
+            msg = None
+            break
+        msg = response.choices[0].message
+        tool_calls = getattr(msg, "tool_calls", None)
+        # Llama 3.3 occasionally hallucinates function-call syntax as plain text
+        # instead of a real tool call -- retry once rather than leaking it to the user.
+        if tool_calls or not _looks_like_raw_tool_call(msg.content):
+            break
+
+    if msg is None:
         return jsonify({
             "type": "answer",
             "content": "I'm having trouble reaching the AI service right now -- try again in a moment.",
         })
 
-    msg = response.choices[0].message
-    tool_calls = getattr(msg, "tool_calls", None)
-
     if not tool_calls:
-        return jsonify({"type": "answer", "content": msg.content or "I don't have an answer for that."})
+        content = msg.content or "I don't have an answer for that."
+        if _looks_like_raw_tool_call(content):
+            content = "I ran into trouble putting that answer together -- try rephrasing your question."
+        return jsonify({"type": "answer", "content": content})
 
     call = tool_calls[0]
     try:
@@ -220,6 +307,53 @@ def chatbot():
                 "tool": "log_activity",
                 "args": {"client_id": row["id"], "company": row["company_name"], "type": activity_type, "notes": args.get("notes") or ""},
                 "summary": f"Log a {activity_type} with {row['company_name']}: “{args.get('notes') or ''}”",
+            })
+
+        if name == "web_search":
+            query = (args.get("query") or "").strip()
+            if not query:
+                return jsonify({"type": "answer", "content": "I wasn't sure what to search for -- can you rephrase?"})
+
+            search = _tavily_search(query)
+            if not search or (not search["answer"] and not search["results"]):
+                return jsonify({
+                    "type": "answer",
+                    "content": "Web search isn't available right now, so I can only answer from what's in the CRM.",
+                })
+
+            sources = search["results"][:5]
+            tool_result_text = (search["answer"] + "\n\n" if search["answer"] else "") + "\n".join(
+                f"- {r['title']} ({r['url']}): {r['content'][:400]}" for r in sources
+            )
+
+            follow_up_messages = messages + [
+                {
+                    "role": "assistant",
+                    "content": msg.content,
+                    "tool_calls": [
+                        {"id": call.id, "type": "function", "function": {"name": "web_search", "arguments": call.function.arguments}}
+                    ],
+                },
+                {"role": "tool", "tool_call_id": call.id, "content": tool_result_text},
+            ]
+
+            try:
+                groq_client = _groq_client()
+                follow_up = groq_client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=follow_up_messages,
+                    max_tokens=600,
+                )
+                summary = follow_up.choices[0].message.content or tool_result_text
+            except Exception as e:
+                print("[chatbot] Groq follow-up call failed:", e)
+                summary = tool_result_text
+
+            return jsonify({
+                "type": "answer",
+                "content": summary,
+                "searched_for": query,
+                "sources": [{"title": r["title"], "url": r["url"]} for r in sources],
             })
 
         if name == "move_deal_stage":
