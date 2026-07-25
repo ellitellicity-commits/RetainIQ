@@ -230,8 +230,8 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
   const drawer = (selected != null) ? createPortal(
     <>
       <div onClick={close} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 9998 }} />
-      <div style={{ position: "fixed", top: 0, right: 0, height: "100vh", width: 560, maxWidth: "92vw", background: "var(--card)", borderLeft: "1px solid var(--border2)", zIndex: 9999, overflowY: "auto", fontFamily: "Inter", boxShadow: "-8px 0 30px rgba(0,0,0,0.5)" }}>
-        <div style={{ padding: "24px 26px" }}>
+      <div style={{ position: "fixed", top: 0, right: 0, height: "100dvh", width: isMobile ? "100vw" : 560, maxWidth: isMobile ? "100vw" : "92vw", background: "var(--card)", borderLeft: isMobile ? "none" : "1px solid var(--border2)", zIndex: 9999, overflowY: "auto", fontFamily: "Inter", boxShadow: isMobile ? "none" : "-8px 0 30px rgba(0,0,0,0.5)" }}>
+        <div style={{ padding: isMobile ? "18px 18px 34px" : "24px 26px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <div style={{ fontSize: 20, fontWeight: 600, color: "var(--text)" }}>{selected === "new" ? "New deal" : (draft.company || "Deal")}</div>
             <button onClick={close} style={{ background: "transparent", border: "none", color: "var(--text3)", fontSize: 26, cursor: "pointer", lineHeight: 1, padding: 0 }}>×</button>
