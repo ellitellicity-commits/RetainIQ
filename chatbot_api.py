@@ -1,4 +1,5 @@
-import os, json, re, sqlite3
+import os, json, re, sqlite3, contextvars
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 import httpx
 from flask import Blueprint, request, jsonify, current_app
 from activities_api import log_activity
@@ -7,6 +8,25 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "retainiq.db")
 
 chatbot_bp = Blueprint("chatbot_bp", __name__)
+
+# Per-call budget for each individual Groq/Tavily request.
+EXTERNAL_CALL_TIMEOUT_SECONDS = 6.0
+
+# Hard ceiling on the *entire* /api/chatbot handler, regardless of how many
+# external calls it chains (tool-selection call, its own tool_use_failed
+# retry, tavily search + its retry, follow-up synthesis call). Each of those
+# calls is individually bounded (EXTERNAL_CALL_TIMEOUT_SECONDS), but a
+# web_search request can chain three of them sequentially, and their worst
+# cases were never summed -- that's what caused the production hang this
+# budget fixes. Production runs a single gunicorn sync worker with a 30s
+# worker timeout and WEB_CONCURRENCY=1, so if this handler runs long enough
+# for gunicorn to kill and respawn the worker, every other request queued
+# behind it stalls for the full kill+respawn window, not just this one. Stay
+# comfortably under 30s so we always return a clean response ourselves first.
+# Next person adding call #4 to this route: re-check this sum still holds.
+CHATBOT_REQUEST_BUDGET_SECONDS = 20.0
+
+_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="chatbot")
 
 STAGES = ["New Leads", "Qualified", "Demo", "Quote sent", "Negotiation", "Closed-Won", "Closed-Lost"]
 
@@ -164,7 +184,7 @@ def _groq_client():
     from groq import Groq
     from dotenv import load_dotenv
     load_dotenv()
-    return Groq(api_key=os.environ.get("GROQ_API_KEY"), timeout=10.0, max_retries=1)
+    return Groq(api_key=os.environ.get("GROQ_API_KEY"), timeout=EXTERNAL_CALL_TIMEOUT_SECONDS, max_retries=1)
 
 
 def _tavily_search(query):
@@ -184,7 +204,7 @@ def _tavily_search(query):
 
     for attempt in range(2):
         try:
-            resp = httpx.post("https://api.tavily.com/search", json=payload, headers=headers, timeout=10.0)
+            resp = httpx.post("https://api.tavily.com/search", json=payload, headers=headers, timeout=EXTERNAL_CALL_TIMEOUT_SECONDS)
             resp.raise_for_status()
             data = resp.json()
             results = [
@@ -227,9 +247,27 @@ def chatbot():
     if not message:
         return jsonify({"error": "message is required"}), 400
 
+    # Run the actual handling in a worker thread so we can enforce
+    # CHATBOT_REQUEST_BUDGET_SECONDS as a hard ceiling on the whole request --
+    # see the comment on that constant for why. copy_context() carries the
+    # current Flask app/request context into the thread, since build_context()
+    # and the tool handlers below rely on current_app.
+    ctx = contextvars.copy_context()
+    future = _executor.submit(ctx.run, _handle_chatbot, message, data.get("history"))
+    try:
+        result = future.result(timeout=CHATBOT_REQUEST_BUDGET_SECONDS)
+    except FutureTimeoutError:
+        return jsonify({
+            "type": "answer",
+            "content": "That's taking longer than expected -- try again in a moment.",
+        })
+    return jsonify(result)
+
+
+def _handle_chatbot(message, history):
     messages = (
         [{"role": "system", "content": SYSTEM_PROMPT + "\n\n" + build_context()}]
-        + _sanitize_history(data.get("history"))
+        + _sanitize_history(history)
         + [{"role": "user", "content": message}]
     )
 
@@ -261,16 +299,16 @@ def chatbot():
             break
 
     if msg is None:
-        return jsonify({
+        return {
             "type": "answer",
             "content": "I'm having trouble reaching the AI service right now -- try again in a moment.",
-        })
+        }
 
     if not tool_calls:
         content = msg.content or "I don't have an answer for that."
         if _looks_like_raw_tool_call(content):
             content = "I ran into trouble putting that answer together -- try rephrasing your question."
-        return jsonify({"type": "answer", "content": content})
+        return {"type": "answer", "content": content}
 
     call = tool_calls[0]
     try:
@@ -285,7 +323,7 @@ def chatbot():
         if name == "draft_email":
             row = resolve_client_by_company(conn, company)
             if not row:
-                return jsonify({"type": "answer", "content": f"I couldn't find a client called \"{company}\"."})
+                return {"type": "answer", "content": f"I couldn't find a client called \"{company}\"."}
             client_row = next((c for c in current_app.test_client().get("/api/db/clients").get_json() if c["id"] == row["id"]), {})
             resp = current_app.test_client().post("/api/email", json={
                 "customer_name": row["company_name"],
@@ -295,31 +333,31 @@ def chatbot():
             })
             email = resp.get_json() or {}
             content = f"Subject: {email.get('subject', '')}\n\n{email.get('body', '')}"
-            return jsonify({"type": "action_result", "tool": "draft_email", "content": content})
+            return {"type": "action_result", "tool": "draft_email", "content": content}
 
         if name == "log_activity":
             row = resolve_client_by_company(conn, company)
             if not row:
-                return jsonify({"type": "answer", "content": f"I couldn't find a client called \"{company}\"."})
+                return {"type": "answer", "content": f"I couldn't find a client called \"{company}\"."}
             activity_type = args.get("type") if args.get("type") in ("call", "meeting") else "call"
-            return jsonify({
+            return {
                 "type": "action_proposal",
                 "tool": "log_activity",
                 "args": {"client_id": row["id"], "company": row["company_name"], "type": activity_type, "notes": args.get("notes") or ""},
                 "summary": f"Log a {activity_type} with {row['company_name']}: “{args.get('notes') or ''}”",
-            })
+            }
 
         if name == "web_search":
             query = (args.get("query") or "").strip()
             if not query:
-                return jsonify({"type": "answer", "content": "I wasn't sure what to search for -- can you rephrase?"})
+                return {"type": "answer", "content": "I wasn't sure what to search for -- can you rephrase?"}
 
             search = _tavily_search(query)
             if not search or (not search["answer"] and not search["results"]):
-                return jsonify({
+                return {
                     "type": "answer",
                     "content": "Web search isn't available right now, so I can only answer from what's in the CRM.",
-                })
+                }
 
             sources = search["results"][:5]
             tool_result_text = (search["answer"] + "\n\n" if search["answer"] else "") + "\n".join(
@@ -349,32 +387,32 @@ def chatbot():
                 print("[chatbot] Groq follow-up call failed:", e)
                 summary = tool_result_text
 
-            return jsonify({
+            return {
                 "type": "answer",
                 "content": summary,
                 "searched_for": query,
                 "sources": [{"title": r["title"], "url": r["url"]} for r in sources],
-            })
+            }
 
         if name == "move_deal_stage":
             deals = resolve_open_deals_by_company(conn, company)
             if not deals:
-                return jsonify({"type": "answer", "content": f"I couldn't find an open deal for \"{company}\"."})
+                return {"type": "answer", "content": f"I couldn't find an open deal for \"{company}\"."}
             stage = args.get("stage")
             if stage not in STAGES:
-                return jsonify({"type": "answer", "content": f"\"{stage}\" isn't a valid deal stage."})
+                return {"type": "answer", "content": f"\"{stage}\" isn't a valid deal stage."}
             if len(deals) > 1:
                 listing = "; ".join(f"{d['product'] or 'deal #' + str(d['id'])} (currently {d['stage']})" for d in deals)
-                return jsonify({"type": "answer", "content": f"{company} has more than one open deal: {listing}. Which one do you mean?"})
+                return {"type": "answer", "content": f"{company} has more than one open deal: {listing}. Which one do you mean?"}
             deal = deals[0]
-            return jsonify({
+            return {
                 "type": "action_proposal",
                 "tool": "move_deal_stage",
                 "args": {"deal_id": deal["id"], "company": deal["company"], "stage": stage},
                 "summary": f"Move {deal['company']}'s deal from {deal['stage']} to {stage}",
-            })
+            }
 
-        return jsonify({"type": "answer", "content": "I tried to do something I don't know how to do yet."})
+        return {"type": "answer", "content": "I tried to do something I don't know how to do yet."}
     finally:
         conn.close()
 
