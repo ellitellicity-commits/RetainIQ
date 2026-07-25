@@ -87,8 +87,8 @@ export default function Dashboard({ API }) {
         <div style={{ marginLeft: "auto", fontSize: 14, color: "var(--text3)" }}>{filtered.length} clients</div>
       </div>
 
-      <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "Inter", fontSize: 16 }}>
+      <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", fontFamily: "Inter", fontSize: 16 }}>
           <thead>
             <tr style={{ background: "var(--card)" }}>
               <th style={th}>Client</th>

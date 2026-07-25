@@ -69,8 +69,8 @@ export default function Contacts({ API }) {
         <div style={{ marginLeft: "auto", fontSize: 14, color: "var(--text3)" }}>{list.length} contacts</div>
       </div>
 
-      <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "Inter" }}>
+      <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", fontFamily: "Inter" }}>
           <thead>
             <tr style={{ background: "var(--card)" }}>
               <th style={th}>Name</th>
