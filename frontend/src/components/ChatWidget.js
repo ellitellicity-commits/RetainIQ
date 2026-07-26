@@ -63,7 +63,7 @@ function ActionProposalCard({ msg, onConfirm, onCancel }) {
           <button
             onClick={() => onConfirm()}
             style={{ padding: "7px 16px", fontSize: 12, fontWeight: 600, borderRadius: 8, border: "none", background: "var(--cyan)", color: "#fff", cursor: "pointer", fontFamily: "Inter", transition: "background 0.15s" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--green)")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "color-mix(in srgb, var(--cyan) 82%, black)")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "var(--cyan)")}
           >
             Confirm
@@ -356,7 +356,7 @@ export default function ChatWidget({ API }) {
                 onClick={() => sendMessage(input)}
                 disabled={!input.trim() || loading}
                 aria-label="Send"
-                onMouseEnter={(e) => { if (input.trim() && !loading) e.currentTarget.style.background = "var(--green)"; }}
+                onMouseEnter={(e) => { if (input.trim() && !loading) e.currentTarget.style.background = "color-mix(in srgb, var(--cyan) 82%, black)"; }}
                 onMouseLeave={(e) => { if (input.trim() && !loading) e.currentTarget.style.background = "var(--cyan)"; }}
                 style={{
                   display: "flex",
