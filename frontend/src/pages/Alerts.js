@@ -76,8 +76,9 @@ export default function Analytics({ API }) {
   const [retention, setRetention] = useState([]);
   const [horizon, setHorizon] = useState("3");
 
-  const refetch = () => fetch(`${API}/api/db/deals`).then(r => r.json()).then(setDeals).catch(() => setDeals([]));
-  useEffect(() => { refetch(); }, [API]);
+  useEffect(() => {
+    fetch(`${API}/api/db/deals`).then(r => r.json()).then(setDeals).catch(() => setDeals([]));
+  }, [API]);
 
   useEffect(() => {
     fetch(`${API}/api/db/clients`).then(r => r.json()).then(d => setClients(Array.isArray(d) ? d : [])).catch(() => setClients([]));
