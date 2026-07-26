@@ -8,7 +8,7 @@ colors:
   hover: "#e8e4da"
   border: "#ddd8cc"
   border2: "#ccc7b9"
-  signal-green: "#0f6e56"
+  brand-indigo: "#3452c4"
   amber-caution: "#b8740f"
   alert-red: "#c0392b"
   soft-alert: "#b5483f"
@@ -20,17 +20,17 @@ colors:
   text-tertiary: "#827d6f"
 typography:
   display:
-    fontFamily: "Inter, sans-serif"
+    fontFamily: "'Space Grotesk', 'Inter', sans-serif"
     fontSize: "32px"
-    fontWeight: 600
+    fontWeight: 700
     lineHeight: 1.1
     letterSpacing: "-0.5px"
   stat:
-    fontFamily: "Inter, sans-serif"
-    fontSize: "34px"
-    fontWeight: 700
+    fontFamily: "'JetBrains Mono', 'IBM Plex Mono', monospace"
+    fontSize: "26-38px"
+    fontWeight: 600
     lineHeight: 1
-    letterSpacing: "-0.6px"
+    letterSpacing: "-0.3px"
   title:
     fontFamily: "Inter, sans-serif"
     fontSize: "20px"
@@ -63,7 +63,7 @@ spacing:
   xxl: "32px"
 components:
   button-primary:
-    backgroundColor: "{colors.signal-green}"
+    backgroundColor: "{colors.brand-indigo}"
     textColor: "#ffffff"
     rounded: "{rounded.sm}"
     padding: "10px 18px"
@@ -89,26 +89,28 @@ components:
 
 **Creative North Star: "The Early Warning System"**
 
-RetainIQ's interface is an instrument panel for catching account risk before it becomes churn, not a decorative CRM shell. Every recurring visual device — the pulsing live-status dot, the risk gauge, the color-coded journey stages — exists to answer one question at a glance: is this account fine, or does it need a call today. Signal Green is deliberately the resting/all-clear state; Amber and Red are reserved for escalating alarm, and that reservation is the entire point of the palette.
+RetainIQ's interface is an instrument panel for catching account risk before it becomes churn, not a decorative CRM shell. Every recurring visual device — the pulsing live-status dot, the risk gauge, the color-coded journey stages — exists to answer one question at a glance: is this account fine, or does it need a call today. Amber and Red are reserved for escalating alarm, and Green is reserved for the confirmed/all-clear reading — that reservation is the entire point of the palette.
 
-The voice is calm and clinical: dense data surfaces (KPI grids, sortable tables, drawers packed with contract detail) rendered with soft ambient shadows, restrained 8–16px radii, and a single typeface (Inter) carrying the whole hierarchy through weight and size rather than mixed fonts. Motion is present but purposeful — spring-eased panels, staggered card fade-ups, a pulsing dot on live status — never decorative for its own sake. The system supports full light/dark theming through CSS custom properties; almost every surface, text, and accent color routes through a `var(--token)` rather than a literal value.
+**Revision note (Visualization v2):** the system originally used one green (`--cyan`/`--brand-bright`) for *both* the brand/interactive accent and the "healthy" semantic reading — documented at the time as intentional ("Signal Green is deliberately the resting/all-clear state"). That collision — a primary button and a "this account is fine" badge reading as the same color — was identified as making the product feel generic/templated and was deliberately split: brand/interactive actions (nav active state, primary buttons, links, focus rings) now route through a dedicated **Brand Indigo** accent, while Green is reserved purely for semantic "healthy/confirmed" status. The Reserved Alarm Rule for Amber/Red is unchanged. Similarly, the former "One Font Rule" (Inter for the entire hierarchy) has been superseded — see Typography.
+
+The voice is calm and clinical: dense data surfaces (KPI grids, sortable tables, drawers packed with contract detail) rendered with soft ambient shadows, restrained 8–16px radii, and a small, deliberate type system (display / mono-stat / body) carrying the hierarchy. Motion is present but purposeful — spring-eased panels, staggered card fade-ups, a pulsing dot on live status — never decorative for its own sake. The system supports full light/dark theming through CSS custom properties; almost every surface, text, and accent color routes through a `var(--token)` rather than a literal value.
 
 **Key Characteristics:**
-- One typeface (Inter) for the entire hierarchy — no serif/mono pairing despite what older project docs claim.
-- Signal Green as the calm baseline; Amber/Red exist only to signal escalating risk.
+- A three-part type system: Space Grotesk for page titles/display, JetBrains Mono (tabular figures) for stat-card numbers, Inter for everything else — see Typography.
+- Brand Indigo (`--cyan`/`--brand-bright`) as the interactive accent, kept distinct from Green (the "healthy/confirmed" semantic reading) and from Amber/Red (escalating risk).
 - Flat-by-default surfaces with soft ambient shadows at rest, deeper directional shadows on overlays.
 - Small, consistent radii (6–16px) plus a 999px pill for filters and status pills — no sharp corners, no heavy rounding.
 - Full light/dark theming via CSS custom properties, with a brighter accent variant (`--brand-bright`) swapped in for dark mode where the flat brand color would go flat against a dark surface.
 
 ## Colors
 
-A muted, editorial palette built around one calm green accent, with amber/red reserved strictly for risk escalation.
+An editorial palette that now separates **brand** (what's interactive) from **semantic status** (what's happening to an account), with amber/red reserved strictly for risk escalation and green reserved for the confirmed/healthy reading.
 
 ### Primary
-- **Signal Green** (`#0f6e56` light / `#6FD9B7` dark): the brand accent — primary buttons, active nav state, focus rings, links, the "all clear" reading on any risk-adjacent element. In dark mode this token (`--brand-bright`) shifts to a brighter mint so it stays legible against dark surfaces; the flat `#0f6e56` (`--cyan`) is kept for smaller accents (icons, borders, glows) where full brightness isn't needed.
+- **Brand Indigo** (`#3452c4` light / `#7c8cf0` dark): the brand/interactive accent — primary buttons, active nav state, focus rings, links, the command palette, the active tab underline. Deliberately a distinct hue from Confirmed Green below, so a primary action never visually reads as a "healthy" status. In dark mode this token (`--brand-bright`) shifts to a brighter periwinkle (`#96A3FF`) so it stays legible against dark surfaces; the flat `#3452c4` (`--cyan`) is kept for smaller accents (icons, borders, glows) where full brightness isn't needed.
 
 ### Secondary
-- **Confirmed Green** (`#14735d` light / `#1b7361` dark): a close neighbor to Signal Green, used specifically for success/confirmation states — the "live" status pill, a completed send action — kept distinct so a *confirmed action* doesn't visually collide with the *baseline brand accent*.
+- **Confirmed Green** (`#14735d` light / `#1b7361` dark): the system's one semantic "healthy/confirmed" reading — the Active/Healthy status chip, the "live" status pill, a completed send action, the retention-trend line when it's in a healthy band. Never used for brand/interactive elements (see Brand Indigo above) — this keeps "this is safe to click" and "this account is fine" visually distinct.
 - **AI Purple** (`#7c3aed` light / `#a78bfa` dark): marks AI-originated content and meeting-type activity — the copilot sparkle icon, AI insight notifications, meeting entries on the activity timeline. Reserved for "this came from the assistant," not used as a general accent.
 - **Info Blue** (`#2563eb` light / `#60a5fa` dark): neutral secondary information — medium-priority markers, pending states, mention notifications. The quietest of the semantic colors; used when something needs a color but isn't yet urgent.
 
@@ -126,26 +128,28 @@ A muted, editorial palette built around one calm green accent, with amber/red re
 ### Named Rules
 **The Reserved Alarm Rule.** Amber and Red never appear as decoration or as a general accent — they exist exclusively to mark At-Risk and Critical/Expired states. If a new element needs an eye-catching color without implying risk, reach for Signal Green or AI Purple, never Amber/Red.
 
-**The Bright Variant Rule.** Dark theme doesn't just invert lightness — where the flat brand accent (`--cyan`, `#0f6e56`) would read flat against a dark surface, dark mode swaps in a distinct brighter token (`--brand-bright`, `#6FD9B7`) for foregrounded uses like active nav text and the logo. Follow this pattern for any new accent that needs to read clearly on both a light card and a near-black sidebar.
+**The Bright Variant Rule.** Dark theme doesn't just invert lightness — where the flat brand accent (`--cyan`, `#3452c4`) would read flat against a dark surface, dark mode swaps in a distinct brighter token (`--brand-bright`, `#96A3FF`) for foregrounded uses like active nav text and the logo. Follow this pattern for any new accent that needs to read clearly on both a light card and a near-black sidebar.
+
+**The Brand/Status Separation Rule.** `--cyan`/`--brand-bright` (Brand Indigo) marks *interactive* elements — anything clickable, active, or focused. `--green` (Confirmed Green) marks *semantic* healthy/confirmed status. The two must never be the same hue: a new component reaching for "the accent color" needs to first ask whether it's marking an action (→ brand indigo) or a status (→ the matching semantic color).
 
 ### Known inconsistency
 The Active/At-Risk/Critical/Expired **status chip** colors (used in Dashboard and Clients tables) are hardcoded hex pairs (e.g. `#f3dada`/`#a83838`) defined locally per-page, not routed through the `--var()` token system like every other color in the app. They render identically in light and dark mode and don't currently adapt. This is a known quirk of the current implementation, not an intentional design decision — new status-color work should route through tokens; don't propagate the hardcoded pattern.
 
 ## Typography
 
-**Display / Body / Label Font:** Inter (system sans-serif fallback).
+**Display Font:** Space Grotesk (falls back to Inter). **Stat Font:** JetBrains Mono, tabular figures (falls back to IBM Plex Mono / system monospace). **Body / Title / Label Font:** Inter (system sans-serif fallback).
 
-**Character:** One typeface carries the entire hierarchy through weight and size rather than a display/body pairing. This keeps the dense, data-heavy surfaces (tables, KPI grids, drawers) feeling like one continuous instrument rather than a mix of typographic voices.
+**Character:** A deliberate three-part system rather than one typeface stretched across every role. Space Grotesk gives page titles a distinct, geometric voice so pages read as designed rather than templated; JetBrains Mono gives every stat-card number fixed-width tabular figures so values feel measured and deliberate (and so digits don't jitter/reflow as they change); Inter still carries all the dense, data-heavy surfaces — tables, forms, labels, body copy — where legibility at small sizes matters more than character.
 
 ### Hierarchy
-- **Display** (600, 32px, -0.5px tracking): page titles ("Dashboard", "Clients").
-- **Stat** (700, 34–40px, -0.6px to -1px tracking): the large number in a KPI card — the single most important value on a dashboard-style page.
-- **Title** (700, 20–22px): section/step headers, drawer titles.
-- **Body** (400–500, 13–16px): table cells, form fields, general copy.
-- **Label** (600–700, 9–11px, 1–1.5px tracking, uppercase): table headers, stat labels, badges, section eyebrows — the smallest, most technical layer of the type system.
+- **Display** (`--font-display`, 700, 28–32px, -0.5px tracking): page titles ("Dashboard", "Clients").
+- **Stat** (`--font-mono`, 600, 26–38px, -0.3px tracking): the large number in a KPI card — the single most important value on a dashboard-style page. Tabular/monospace specifically so a column of stat numbers aligns.
+- **Title** (Inter, 700, 20–22px): section/step headers, drawer titles.
+- **Body** (Inter, 400–500, 13–16px): table cells, form fields, general copy.
+- **Label** (Inter, 600–700, 9–11px, 1–1.5px tracking, uppercase): table headers, stat labels, badges, section eyebrows — the smallest, most technical layer of the type system.
 
 ### Named Rules
-**The One Font Rule.** Every weight and size in the system comes from Inter. Do not introduce a second family (serif, mono, or otherwise) for "editorial" or "technical" flavor — hierarchy is built with size, weight, and letter-spacing, not font mixing.
+**The Two-Font Ceiling.** Space Grotesk (display) and JetBrains Mono (stat figures) are the only two families layered on top of Inter, each with one narrow, non-overlapping job — headings, and numbers, respectively. Do not add a third family, and do not use Space Grotesk or JetBrains Mono outside their designated role (e.g. body copy stays in Inter even on a page that also uses the other two).
 
 ## Layout
 
@@ -214,7 +218,7 @@ Small, consistent radii throughout — nothing sharp, nothing heavily rounded. I
 - **Focus:** border tightens to `--border2` / accent color; no heavy glow, kept consistent with the system's restrained motion language.
 
 ### Navigation (Sidebar)
-- **Style:** icon + label rows, 9px radius, active state = Signal-Green-tinted background (`rgba(15,110,86,0.18)`) with Signal Green (bright variant) text; inactive = transparent background, `--text2` label, hover picks up `--hover2`.
+- **Style:** icon + label rows, 9px radius, active state = Brand-Indigo-tinted background (`--cyan-dim`) with Brand Indigo (bright variant) text; inactive = transparent background, `--text2` label, hover picks up `--hover2`.
 - **Collapse behavior:** icon-only at 66px width with tooltips (`title` attr) replacing visible labels; a toggle button lives at the top of the rail.
 
 ### Charts (Recharts)
@@ -252,6 +256,6 @@ Real, database-backed activity logging (`activities_api.py`, `notifications_api.
 ### Don't:
 - **Don't** color a routine CRUD action (add/edit/delete) Amber or Red just because it needs *some* accent — delete actions in this app are neutral (`--text3`), matching the existing Delete buttons; reserve Amber/Red for actual risk states, per the Reserved Alarm Rule.
 - **Don't** add new component classes to `App.css`. It's a legacy stylesheet from an earlier iteration of the UI: no page or component references any of its `.card` / `.btn` / `.stat-card` / `.terminal-panel` classes (or most of its keyframes) anymore — only the `:root`/`[data-theme="dark"]` variable declarations and the `spin` keyframe are still live. Writing new classes there will silently do nothing.
-- **Don't** introduce a second typeface. Inter carries the entire hierarchy; treat the README's "Space Mono • DM Sans" line as stale, not a spec.
+- **Don't** add a third typeface, or use Space Grotesk/JetBrains Mono outside their designated display/stat roles, per the Two-Font Ceiling.
 - **Don't** copy the hardcoded status-chip hex pairs for new status/severity UI — route new work through the token system instead of replicating that inconsistency.
 - **Don't** use Amber or Red as a general-purpose accent color; they carry risk meaning everywhere else in the product.

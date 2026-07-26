@@ -74,8 +74,9 @@ export default function CopilotPage() {
           </span>
           <h1
             style={{
+              fontFamily: "var(--font-display)",
               fontSize: 26,
-              fontWeight: 800,
+              fontWeight: 700,
               color: "var(--text)",
               margin: 0,
               letterSpacing: "-0.02em",
@@ -444,11 +445,12 @@ function StatCard({ label, value, color }) {
     >
       <div
         style={{
-          fontSize: 28,
-          fontWeight: 800,
+          fontFamily: "var(--font-mono)",
+          fontSize: 26,
+          fontWeight: 600,
           color: color,
           marginBottom: 4,
-          letterSpacing: "-0.02em",
+          letterSpacing: "-0.01em",
         }}
       >
         {value}

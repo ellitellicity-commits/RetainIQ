@@ -42,17 +42,11 @@ export default function Automations() {
     setShowForm(false);
   };
 
-  const stats = [
-    { label: "Active Rules", value: activeRules.length, color: "var(--green)" },
-    { label: "Total Triggers", value: totalTriggers, color: "var(--cyan)" },
-    { label: "Last Triggered", value: formatDate(lastTriggered), color: "var(--text)", small: true },
-  ];
-
   return (
     <div>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-        <div style={{ fontFamily: "Inter", fontSize: 28, fontWeight: 600, color: "var(--text)", letterSpacing: -0.5 }}>
+        <div style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 700, color: "var(--text)", letterSpacing: -0.5 }}>
           Automations
         </div>
         <button onClick={() => setShowForm(true)} style={{
@@ -68,17 +62,38 @@ export default function Automations() {
         </button>
       </div>
 
-      {/* Stats Row */}
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 14, marginBottom: 26 }}>
-        {stats.map(s => (
-          <div key={s.label} style={{
-            background: "var(--card)", border: "1px solid var(--border2)", borderRadius: "var(--radius)",
-            padding: "16px 20px", boxShadow: "var(--shadow)"
-          }}>
-            <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 6, fontWeight: 500 }}>{s.label}</div>
-            <div style={{ fontSize: s.small ? 18 : 28, fontWeight: 700, color: s.color, letterSpacing: -0.5 }}>{s.value}</div>
-          </div>
-        ))}
+      {/* Status Bar -- a single console strip instead of three stat cards: a live
+          pulsing dot for Active Rules (the same "is this fine right now" device
+          DESIGN.md calls out elsewhere), Total Triggers as the one true stat number,
+          Last Triggered demoted to a caption since a date doesn't read well as a stat digit. */}
+      <div style={{
+        display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center",
+        gap: isMobile ? 12 : 28, background: "var(--card)", border: "1px solid var(--border2)", borderRadius: "var(--radius)",
+        padding: "14px 22px", boxShadow: "var(--shadow)", marginBottom: 26,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+          <span style={{ position: "relative", display: "flex", width: 9, height: 9 }}>
+            {activeRules.length > 0 && (
+              <span style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "var(--green)", animation: "pulse-dot 1.8s ease-out infinite" }} />
+            )}
+            <span style={{ width: 9, height: 9, borderRadius: "50%", background: activeRules.length > 0 ? "var(--green)" : "var(--text3)" }} />
+          </span>
+          <span style={{ fontSize: 13, color: "var(--text)", fontWeight: 600 }}>{activeRules.length} active</span>
+          <span style={{ fontSize: 13, color: "var(--text3)" }}>of {rules.length} rule{rules.length === 1 ? "" : "s"}</span>
+        </div>
+
+        {!isMobile && <div style={{ width: 1, height: 24, background: "var(--border)" }} />}
+
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 600, color: "var(--cyan)", letterSpacing: -0.3 }}>{totalTriggers}</span>
+          <span style={{ fontSize: 12.5, color: "var(--text3)" }}>total triggers</span>
+        </div>
+
+        {!isMobile && <div style={{ width: 1, height: 24, background: "var(--border)" }} />}
+
+        <div style={{ fontSize: 12.5, color: "var(--text3)", marginLeft: isMobile ? 0 : "auto" }}>
+          Last triggered <span style={{ color: "var(--text2)", fontWeight: 500 }}>{formatDate(lastTriggered)}</span>
+        </div>
       </div>
 
       {/* Rule Cards */}
@@ -120,7 +135,7 @@ export default function Automations() {
                   {/* WHEN badge */}
                   <span style={{
                     padding: "3px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700,
-                    background: "rgba(245,158,11,0.15)", color: "var(--amber)",
+                    background: "color-mix(in srgb, var(--amber) 15%, transparent)", color: "var(--amber)",
                     letterSpacing: 0.5, textTransform: "uppercase"
                   }}>
                     WHEN
@@ -142,7 +157,7 @@ export default function Automations() {
                   {/* THEN badge */}
                   <span style={{
                     padding: "3px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700,
-                    background: "rgba(0,210,211,0.15)", color: "var(--cyan)",
+                    background: "color-mix(in srgb, var(--cyan) 15%, transparent)", color: "var(--cyan)",
                     letterSpacing: 0.5, textTransform: "uppercase"
                   }}>
                     THEN
@@ -187,7 +202,7 @@ export default function Automations() {
               </div>
               <div>
                 <label style={{ fontSize: 11, color: "var(--text3)", marginBottom: 4, display: "block" }}>
-                  <span style={{ padding: "2px 6px", borderRadius: 3, fontSize: 9, fontWeight: 700, background: "rgba(245,158,11,0.15)", color: "var(--amber)", marginRight: 6 }}>WHEN</span>
+                  <span style={{ padding: "2px 6px", borderRadius: 3, fontSize: 9, fontWeight: 700, background: "color-mix(in srgb, var(--amber) 15%, transparent)", color: "var(--amber)", marginRight: 6 }}>WHEN</span>
                   Trigger condition
                 </label>
                 <input placeholder="e.g. Deal has no activity for 14+ days" value={newRule.trigger} onChange={e => setNewRule({ ...newRule, trigger: e.target.value })}
@@ -195,7 +210,7 @@ export default function Automations() {
               </div>
               <div>
                 <label style={{ fontSize: 11, color: "var(--text3)", marginBottom: 4, display: "block" }}>
-                  <span style={{ padding: "2px 6px", borderRadius: 3, fontSize: 9, fontWeight: 700, background: "rgba(0,210,211,0.15)", color: "var(--cyan)", marginRight: 6 }}>THEN</span>
+                  <span style={{ padding: "2px 6px", borderRadius: 3, fontSize: 9, fontWeight: 700, background: "color-mix(in srgb, var(--cyan) 15%, transparent)", color: "var(--cyan)", marginRight: 6 }}>THEN</span>
                   Action to perform
                 </label>
                 <input placeholder="e.g. Create task for deal owner + send notification" value={newRule.action} onChange={e => setNewRule({ ...newRule, action: e.target.value })}

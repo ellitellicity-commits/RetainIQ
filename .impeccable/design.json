@@ -1,43 +1,220 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-24T19:06:13Z",
+  "generatedAt": "2026-07-26T19:35:18Z",
   "title": "Design System: RetainIQ",
   "extensions": {
     "colorMeta": {
-      "signal-green": { "role": "primary", "displayName": "Signal Green", "canonical": "#0f6e56", "tonalRamp": ["oklch(15% 0.03 165)", "oklch(25% 0.05 165)", "oklch(35% 0.07 165)", "oklch(45% 0.08 165)", "oklch(52% 0.09 165)", "oklch(65% 0.08 165)", "oklch(80% 0.05 165)", "oklch(95% 0.02 165)"] },
-      "confirmed-green": { "role": "secondary", "displayName": "Confirmed Green", "canonical": "#14735d", "tonalRamp": ["oklch(14% 0.03 162)", "oklch(24% 0.05 162)", "oklch(34% 0.06 162)", "oklch(44% 0.07 162)", "oklch(50% 0.08 162)", "oklch(63% 0.07 162)", "oklch(78% 0.05 162)", "oklch(94% 0.02 162)"] },
-      "ai-purple": { "role": "secondary", "displayName": "AI Purple", "canonical": "#7c3aed", "tonalRamp": ["oklch(15% 0.06 295)", "oklch(25% 0.10 295)", "oklch(35% 0.14 295)", "oklch(45% 0.18 295)", "oklch(55% 0.21 295)", "oklch(68% 0.18 295)", "oklch(82% 0.10 295)", "oklch(95% 0.03 295)"] },
-      "info-blue": { "role": "secondary", "displayName": "Info Blue", "canonical": "#2563eb", "tonalRamp": ["oklch(15% 0.06 260)", "oklch(25% 0.10 260)", "oklch(35% 0.14 260)", "oklch(45% 0.17 260)", "oklch(54% 0.20 260)", "oklch(67% 0.15 260)", "oklch(82% 0.08 260)", "oklch(95% 0.02 260)"] },
-      "amber-caution": { "role": "tertiary", "displayName": "Amber Caution", "canonical": "#b8740f", "tonalRamp": ["oklch(15% 0.03 70)", "oklch(25% 0.06 70)", "oklch(35% 0.09 70)", "oklch(45% 0.11 70)", "oklch(55% 0.13 70)", "oklch(68% 0.12 70)", "oklch(82% 0.08 70)", "oklch(95% 0.03 70)"] },
-      "alert-red": { "role": "tertiary", "displayName": "Alert Red", "canonical": "#c0392b", "tonalRamp": ["oklch(15% 0.04 25)", "oklch(25% 0.08 25)", "oklch(35% 0.11 25)", "oklch(45% 0.14 25)", "oklch(54% 0.16 25)", "oklch(67% 0.14 25)", "oklch(82% 0.08 25)", "oklch(95% 0.02 25)"] },
-      "soft-alert": { "role": "tertiary", "displayName": "Soft Alert", "canonical": "#b5483f", "tonalRamp": ["oklch(16% 0.03 20)", "oklch(26% 0.06 20)", "oklch(36% 0.09 20)", "oklch(46% 0.11 20)", "oklch(55% 0.12 20)", "oklch(68% 0.10 20)", "oklch(83% 0.06 20)", "oklch(95% 0.02 20)"] },
-      "bg": { "role": "neutral", "displayName": "Canvas", "canonical": "#ece8e0" },
-      "card": { "role": "neutral", "displayName": "Card", "canonical": "#faf8f2" },
-      "sidebar": { "role": "neutral", "displayName": "Sidebar", "canonical": "#e6e2d8" },
-      "border": { "role": "neutral", "displayName": "Border", "canonical": "#ddd8cc" },
-      "border2": { "role": "neutral", "displayName": "Border, Deep", "canonical": "#ccc7b9" },
-      "text-primary": { "role": "neutral", "displayName": "Text Primary", "canonical": "#2a2a28" },
-      "text-secondary": { "role": "neutral", "displayName": "Text Secondary", "canonical": "#57534a" },
-      "text-tertiary": { "role": "neutral", "displayName": "Text Tertiary", "canonical": "#827d6f" }
+      "brand-indigo": {
+        "role": "primary",
+        "displayName": "Brand Indigo",
+        "canonical": "#3452c4",
+        "tonalRamp": [
+          "oklch(15% 0.04 265)",
+          "oklch(25% 0.08 265)",
+          "oklch(35% 0.13 265)",
+          "oklch(45% 0.18 265)",
+          "oklch(52% 0.21 265)",
+          "oklch(65% 0.18 265)",
+          "oklch(80% 0.10 265)",
+          "oklch(95% 0.03 265)"
+        ]
+      },
+      "confirmed-green": {
+        "role": "secondary",
+        "displayName": "Confirmed Green",
+        "canonical": "#14735d",
+        "tonalRamp": [
+          "oklch(14% 0.03 162)",
+          "oklch(24% 0.05 162)",
+          "oklch(34% 0.06 162)",
+          "oklch(44% 0.07 162)",
+          "oklch(50% 0.08 162)",
+          "oklch(63% 0.07 162)",
+          "oklch(78% 0.05 162)",
+          "oklch(94% 0.02 162)"
+        ]
+      },
+      "ai-purple": {
+        "role": "secondary",
+        "displayName": "AI Purple",
+        "canonical": "#7c3aed",
+        "tonalRamp": [
+          "oklch(15% 0.06 295)",
+          "oklch(25% 0.10 295)",
+          "oklch(35% 0.14 295)",
+          "oklch(45% 0.18 295)",
+          "oklch(55% 0.21 295)",
+          "oklch(68% 0.18 295)",
+          "oklch(82% 0.10 295)",
+          "oklch(95% 0.03 295)"
+        ]
+      },
+      "info-blue": {
+        "role": "secondary",
+        "displayName": "Info Blue",
+        "canonical": "#2563eb",
+        "tonalRamp": [
+          "oklch(15% 0.06 260)",
+          "oklch(25% 0.10 260)",
+          "oklch(35% 0.14 260)",
+          "oklch(45% 0.17 260)",
+          "oklch(54% 0.20 260)",
+          "oklch(67% 0.15 260)",
+          "oklch(82% 0.08 260)",
+          "oklch(95% 0.02 260)"
+        ]
+      },
+      "amber-caution": {
+        "role": "tertiary",
+        "displayName": "Amber Caution",
+        "canonical": "#b8740f",
+        "tonalRamp": [
+          "oklch(15% 0.03 70)",
+          "oklch(25% 0.06 70)",
+          "oklch(35% 0.09 70)",
+          "oklch(45% 0.11 70)",
+          "oklch(55% 0.13 70)",
+          "oklch(68% 0.12 70)",
+          "oklch(82% 0.08 70)",
+          "oklch(95% 0.03 70)"
+        ]
+      },
+      "alert-red": {
+        "role": "tertiary",
+        "displayName": "Alert Red",
+        "canonical": "#c0392b",
+        "tonalRamp": [
+          "oklch(15% 0.04 25)",
+          "oklch(25% 0.08 25)",
+          "oklch(35% 0.11 25)",
+          "oklch(45% 0.14 25)",
+          "oklch(54% 0.16 25)",
+          "oklch(67% 0.14 25)",
+          "oklch(82% 0.08 25)",
+          "oklch(95% 0.02 25)"
+        ]
+      },
+      "soft-alert": {
+        "role": "tertiary",
+        "displayName": "Soft Alert",
+        "canonical": "#b5483f",
+        "tonalRamp": [
+          "oklch(16% 0.03 20)",
+          "oklch(26% 0.06 20)",
+          "oklch(36% 0.09 20)",
+          "oklch(46% 0.11 20)",
+          "oklch(55% 0.12 20)",
+          "oklch(68% 0.10 20)",
+          "oklch(83% 0.06 20)",
+          "oklch(95% 0.02 20)"
+        ]
+      },
+      "bg": {
+        "role": "neutral",
+        "displayName": "Canvas",
+        "canonical": "#ece8e0"
+      },
+      "card": {
+        "role": "neutral",
+        "displayName": "Card",
+        "canonical": "#faf8f2"
+      },
+      "sidebar": {
+        "role": "neutral",
+        "displayName": "Sidebar",
+        "canonical": "#e6e2d8"
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Border",
+        "canonical": "#ddd8cc"
+      },
+      "border2": {
+        "role": "neutral",
+        "displayName": "Border, Deep",
+        "canonical": "#ccc7b9"
+      },
+      "text-primary": {
+        "role": "neutral",
+        "displayName": "Text Primary",
+        "canonical": "#2a2a28"
+      },
+      "text-secondary": {
+        "role": "neutral",
+        "displayName": "Text Secondary",
+        "canonical": "#57534a"
+      },
+      "text-tertiary": {
+        "role": "neutral",
+        "displayName": "Text Tertiary",
+        "canonical": "#827d6f"
+      }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display", "purpose": "Page titles (Dashboard, Clients)." },
-      "stat": { "displayName": "Stat", "purpose": "The large number inside a KPI card." },
-      "title": { "displayName": "Title", "purpose": "Section headers, drawer titles." },
-      "body": { "displayName": "Body", "purpose": "Table cells, form fields, general copy." },
-      "label": { "displayName": "Label", "purpose": "Table headers, stat labels, badges, uppercase eyebrows." }
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page titles (Dashboard, Clients); font-family Space Grotesk."
+      },
+      "stat": {
+        "displayName": "Stat",
+        "purpose": "The large number inside a KPI card; font-family JetBrains Mono, tabular figures."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section headers, drawer titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Table cells, form fields, general copy."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Table headers, stat labels, badges, uppercase eyebrows."
+      }
     },
     "shadows": [
-      { "name": "ambient", "value": "0 1px 3px rgba(0,0,0,0.07)", "purpose": "Resting cards and stat tiles in light theme." },
-      { "name": "ambient-dark", "value": "0 4px 24px rgba(0,0,0,0.4)", "purpose": "Resting cards and stat tiles in dark theme (deeper, since dark surfaces need more contrast to read elevation)." },
-      { "name": "drawer", "value": "-8px 0 30px rgba(0,0,0,0.5)", "purpose": "Client/deal detail drawer sliding in from the right." },
-      { "name": "side-panel", "value": "-4px 0 24px rgba(0,0,0,0.18)", "purpose": "AI Co-pilot side panel sliding in from the right." },
-      { "name": "modal", "value": "0 20px 60px rgba(0,0,0,0.4)", "purpose": "Centered dialogs (e.g. email edit modal); the deepest, omnidirectional shadow in the system." }
+      {
+        "name": "ambient",
+        "value": "0 1px 3px rgba(0,0,0,0.07)",
+        "purpose": "Resting cards and stat tiles in light theme."
+      },
+      {
+        "name": "ambient-dark",
+        "value": "0 4px 24px rgba(0,0,0,0.4)",
+        "purpose": "Resting cards and stat tiles in dark theme (deeper, since dark surfaces need more contrast to read elevation)."
+      },
+      {
+        "name": "drawer",
+        "value": "-8px 0 30px rgba(0,0,0,0.5)",
+        "purpose": "Client/deal detail drawer sliding in from the right."
+      },
+      {
+        "name": "side-panel",
+        "value": "-4px 0 24px rgba(0,0,0,0.18)",
+        "purpose": "AI Co-pilot side panel sliding in from the right."
+      },
+      {
+        "name": "modal",
+        "value": "0 20px 60px rgba(0,0,0,0.4)",
+        "purpose": "Centered dialogs (e.g. email edit modal); the deepest, omnidirectional shadow in the system."
+      }
     ],
     "motion": [
-      { "name": "panel-spring", "value": "type: spring, damping: 28, stiffness: 300", "purpose": "Framer Motion spring for the AI Co-pilot panel sliding in from the right." },
-      { "name": "card-ease", "value": "cubic-bezier(0.34,1.56,0.64,1)", "purpose": "Bouncy ease for hover lifts and staggered card entrances." },
-      { "name": "stagger-delay", "value": "index * 0.05s", "purpose": "Per-card delay for KPI grid fade-up entrance." }
+      {
+        "name": "panel-spring",
+        "value": "type: spring, damping: 28, stiffness: 300",
+        "purpose": "Framer Motion spring for the AI Co-pilot panel sliding in from the right."
+      },
+      {
+        "name": "card-ease",
+        "value": "cubic-bezier(0.34,1.56,0.64,1)",
+        "purpose": "Bouncy ease for hover lifts and staggered card entrances."
+      },
+      {
+        "name": "stagger-delay",
+        "value": "index * 0.05s",
+        "purpose": "Per-card delay for KPI grid fade-up entrance."
+      }
     ],
     "breakpoints": []
   },
@@ -48,7 +225,7 @@
       "refersTo": "button-primary",
       "description": "Main call-to-action button (Save, Send, Generate email).",
       "html": "<button class=\"ds-btn-primary\">Save changes</button>",
-      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border: none; border-radius: 9px; font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; color: #ffffff; background: var(--signal-green, #0f6e56); cursor: pointer; transition: background 0.15s ease, transform 0.15s ease; } .ds-btn-primary:hover { background: var(--confirmed-green, #14735d); transform: translateY(-1px); } .ds-btn-primary:focus-visible { outline: 2px solid var(--signal-green, #0f6e56); outline-offset: 2px; }"
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border: none; border-radius: 9px; font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; color: #ffffff; background: var(--brand-indigo, #3452c4); cursor: pointer; transition: background 0.15s ease, transform 0.15s ease; } .ds-btn-primary:hover { background: #2941a3; transform: translateY(-1px); } .ds-btn-primary:focus-visible { outline: 2px solid var(--brand-indigo, #3452c4); outline-offset: 2px; }"
     },
     {
       "name": "Ghost Button",
@@ -56,7 +233,7 @@
       "refersTo": "button-ghost",
       "description": "Secondary action button (Cancel, Copy) paired next to a primary button.",
       "html": "<button class=\"ds-btn-ghost\">Cancel</button>",
-      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border: 1px solid var(--border2, #ccc7b9); border-radius: 9px; font-family: Inter, sans-serif; font-size: 13px; font-weight: 500; color: var(--text-secondary, #57534a); background: transparent; cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; } .ds-btn-ghost:hover { color: var(--signal-green, #0f6e56); border-color: var(--signal-green, #0f6e56); background: rgba(15,110,86,0.08); }"
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border: 1px solid var(--border2, #ccc7b9); border-radius: 9px; font-family: Inter, sans-serif; font-size: 13px; font-weight: 500; color: var(--text-secondary, #57534a); background: transparent; cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; } .ds-btn-ghost:hover { color: var(--brand-indigo, #3452c4); border-color: var(--brand-indigo, #3452c4); background: rgba(52,82,196,0.08); }"
     },
     {
       "name": "KPI Stat Card",
@@ -64,20 +241,20 @@
       "refersTo": "stat-card",
       "description": "Dashboard KPI tile with label and large accent-colored value.",
       "html": "<div class=\"ds-stat-card\"><div class=\"ds-stat-label\">Total clients</div><div class=\"ds-stat-value\">248</div></div>",
-      "css": ".ds-stat-card { background: var(--card, #faf8f2); border: 1px solid var(--border2, #ccc7b9); border-radius: 14px; padding: 22px 24px; box-shadow: 0 2px 14px rgba(0,0,0,0.12); transition: transform 0.2s ease; } .ds-stat-card:hover { transform: translateY(-2px); } .ds-stat-label { font-family: Inter, sans-serif; font-size: 14px; color: var(--text-secondary, #57534a); margin-bottom: 12px; } .ds-stat-value { font-family: Inter, sans-serif; font-size: 34px; font-weight: 700; color: var(--signal-green, #0f6e56); letter-spacing: -0.6px; line-height: 1; }"
+      "css": ".ds-stat-card { background: var(--card, #faf8f2); border: 1px solid var(--border2, #ccc7b9); border-radius: 14px; padding: 22px 24px; box-shadow: 0 2px 14px rgba(0,0,0,0.12); transition: transform 0.2s ease; } .ds-stat-card:hover { transform: translateY(-2px); } .ds-stat-label { font-family: Inter, sans-serif; font-size: 14px; color: var(--text-secondary, #57534a); margin-bottom: 12px; } .ds-stat-value { font-family: Inter, sans-serif; font-size: 34px; font-weight: 700; color: var(--brand-indigo, #3452c4); letter-spacing: -0.6px; line-height: 1; }"
     },
     {
       "name": "Filter Pill",
       "kind": "chip",
       "description": "Toggleable filter chip (All / Critical / At Risk / Healthy).",
       "html": "<button class=\"ds-filter-pill ds-filter-pill--active\">Critical</button>",
-      "css": ".ds-filter-pill { padding: 8px 18px; border-radius: 999px; border: 1px solid var(--border, #ddd8cc); background: transparent; color: var(--text-secondary, #57534a); font-family: Inter, sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; } .ds-filter-pill--active { border-color: var(--signal-green, #0f6e56); background: rgba(15,110,86,0.10); color: var(--signal-green, #0f6e56); }"
+      "css": ".ds-filter-pill { padding: 8px 18px; border-radius: 999px; border: 1px solid var(--border, #ddd8cc); background: transparent; color: var(--text-secondary, #57534a); font-family: Inter, sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; } .ds-filter-pill--active { border-color: var(--brand-indigo, #3452c4); background: rgba(52,82,196,0.10); color: var(--brand-indigo, #3452c4); }"
     },
     {
       "name": "Status Chip",
       "kind": "chip",
       "refersTo": "status-chip",
-      "description": "Journey-stage indicator (Active/At-Risk/Critical/Expired). Uses fixed hex pairs per the Colors → Known inconsistency note; does not currently adapt to dark theme.",
+      "description": "Journey-stage indicator (Active/At-Risk/Critical/Expired). Uses fixed hex pairs per the Colors \u2192 Known inconsistency note; does not currently adapt to dark theme.",
       "html": "<span class=\"ds-status-chip ds-status-chip--at-risk\">At-risk</span>",
       "css": ".ds-status-chip { display: inline-block; font-size: 13px; font-weight: 500; padding: 3px 12px; border-radius: 6px; } .ds-status-chip--active { background: #d7e9e1; color: #1b6a58; } .ds-status-chip--at-risk { background: #efe4c4; color: #7d6217; } .ds-status-chip--critical { background: #f3dada; color: #a83838; }"
     },
@@ -86,70 +263,100 @@
       "kind": "nav",
       "description": "Primary navigation row inside the collapsible left rail.",
       "html": "<button class=\"ds-nav-item ds-nav-item--active\"><svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1.5\"/></svg><span>Dashboard</span></button>",
-      "css": ".ds-nav-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: none; border-radius: 9px; background: transparent; color: var(--text-secondary, #57534a); font-family: Inter, sans-serif; font-size: 14.5px; font-weight: 500; text-align: left; cursor: pointer; transition: background 0.12s ease; } .ds-nav-item:hover { background: var(--hover2, #dedacf); } .ds-nav-item--active { background: rgba(15,110,86,0.18); color: var(--signal-green, #0f6e56); }"
+      "css": ".ds-nav-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: none; border-radius: 9px; background: transparent; color: var(--text-secondary, #57534a); font-family: Inter, sans-serif; font-size: 14.5px; font-weight: 500; text-align: left; cursor: pointer; transition: background 0.12s ease; } .ds-nav-item:hover { background: var(--hover2, #dedacf); } .ds-nav-item--active { background: rgba(52,82,196,0.18); color: var(--brand-indigo, #3452c4); }"
     },
     {
       "name": "Insight Row (AI Co-pilot)",
       "kind": "custom",
       "description": "Compact alert/action row used inside the AI Co-pilot panel's Priority Actions and Deal Alerts sections; severity shown via a small dot rather than a full-color badge.",
-      "html": "<div class=\"ds-insight-row\"><span class=\"ds-insight-dot\"></span><div class=\"ds-insight-body\"><div class=\"ds-insight-title\">Acme Corp — renewal at risk</div><div class=\"ds-insight-reason\">No contact in 34 days, renews in 12.</div></div></div>",
+      "html": "<div class=\"ds-insight-row\"><span class=\"ds-insight-dot\"></span><div class=\"ds-insight-body\"><div class=\"ds-insight-title\">Acme Corp \u2014 renewal at risk</div><div class=\"ds-insight-reason\">No contact in 34 days, renews in 12.</div></div></div>",
       "css": ".ds-insight-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border, #ddd8cc); background: var(--bg, #ece8e0); } .ds-insight-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--amber-caution, #b8740f); flex-shrink: 0; margin-top: 5px; } .ds-insight-title { font-size: 12px; font-weight: 600; color: var(--text-primary, #2a2a28); margin-bottom: 2px; } .ds-insight-reason { font-size: 11px; color: var(--text-tertiary, #827d6f); line-height: 1.4; }"
     },
     {
       "name": "Retention Area Chart",
       "kind": "custom",
-      "description": "First recharts usage in the system (Analytics → Retention trend). Gradient-filled area over a horizontal-only grid, all styling driven by tokens instead of recharts defaults; this static SVG is a representative preview, not the live recharts output.",
-      "html": "<div class=\"ds-chart-card\"><div class=\"ds-chart-title\">Retention trend</div><svg class=\"ds-chart-svg\" viewBox=\"0 0 300 120\" preserveAspectRatio=\"none\" role=\"img\" aria-label=\"Retention trend, ending at 36%\"><defs><linearGradient id=\"ds-chart-fill\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"var(--brand-bright, #6FD9B7)\" stop-opacity=\"0.28\"/><stop offset=\"100%\" stop-color=\"var(--brand-bright, #6FD9B7)\" stop-opacity=\"0\"/></linearGradient></defs><line x1=\"0\" y1=\"20\" x2=\"300\" y2=\"20\" class=\"ds-chart-grid\"/><line x1=\"0\" y1=\"60\" x2=\"300\" y2=\"60\" class=\"ds-chart-grid\"/><line x1=\"0\" y1=\"100\" x2=\"300\" y2=\"100\" class=\"ds-chart-grid\"/><path d=\"M0,85 L60,80 L120,75 L180,78 L240,70 L300,82 L300,120 L0,120 Z\" fill=\"url(#ds-chart-fill)\"/><path d=\"M0,85 L60,80 L120,75 L180,78 L240,70 L300,82\" class=\"ds-chart-line\"/><circle cx=\"300\" cy=\"82\" r=\"3\" class=\"ds-chart-dot\"/></svg></div>",
-      "css": ".ds-chart-card { background: var(--card, #faf8f2); border: 1px solid var(--border2, #ccc7b9); border-radius: 12px; padding: 16px 18px; } .ds-chart-title { font-family: Inter, sans-serif; font-size: 14px; font-weight: 600; color: var(--text-primary, #2a2a28); margin-bottom: 16px; } .ds-chart-svg { width: 100%; height: 120px; overflow: visible; } .ds-chart-grid { stroke: var(--border, #ddd8cc); stroke-width: 1; } .ds-chart-line { fill: none; stroke: var(--brand-bright, #6FD9B7); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; } .ds-chart-dot { fill: var(--brand-bright, #6FD9B7); stroke: var(--card, #faf8f2); stroke-width: 2; }"
+      "description": "First recharts usage in the system (Analytics \u2192 Retention trend). Gradient-filled area over a horizontal-only grid, all styling driven by tokens instead of recharts defaults; this static SVG is a representative preview, not the live recharts output.",
+      "html": "<div class=\"ds-chart-card\"><div class=\"ds-chart-title\">Retention trend</div><svg class=\"ds-chart-svg\" viewBox=\"0 0 300 120\" preserveAspectRatio=\"none\" role=\"img\" aria-label=\"Retention trend, ending at 36%\"><defs><linearGradient id=\"ds-chart-fill\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"var(--brand-bright, #96A3FF)\" stop-opacity=\"0.28\"/><stop offset=\"100%\" stop-color=\"var(--brand-bright, #96A3FF)\" stop-opacity=\"0\"/></linearGradient></defs><line x1=\"0\" y1=\"20\" x2=\"300\" y2=\"20\" class=\"ds-chart-grid\"/><line x1=\"0\" y1=\"60\" x2=\"300\" y2=\"60\" class=\"ds-chart-grid\"/><line x1=\"0\" y1=\"100\" x2=\"300\" y2=\"100\" class=\"ds-chart-grid\"/><path d=\"M0,85 L60,80 L120,75 L180,78 L240,70 L300,82 L300,120 L0,120 Z\" fill=\"url(#ds-chart-fill)\"/><path d=\"M0,85 L60,80 L120,75 L180,78 L240,70 L300,82\" class=\"ds-chart-line\"/><circle cx=\"300\" cy=\"82\" r=\"3\" class=\"ds-chart-dot\"/></svg></div>",
+      "css": ".ds-chart-card { background: var(--card, #faf8f2); border: 1px solid var(--border2, #ccc7b9); border-radius: 12px; padding: 16px 18px; } .ds-chart-title { font-family: Inter, sans-serif; font-size: 14px; font-weight: 600; color: var(--text-primary, #2a2a28); margin-bottom: 16px; } .ds-chart-svg { width: 100%; height: 120px; overflow: visible; } .ds-chart-grid { stroke: var(--border, #ddd8cc); stroke-width: 1; } .ds-chart-line { fill: none; stroke: var(--brand-bright, #96A3FF); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; } .ds-chart-dot { fill: var(--brand-bright, #96A3FF); stroke: var(--card, #faf8f2); stroke-width: 2; }"
     },
     {
       "name": "Inline Log-Entry Form",
       "kind": "custom",
       "description": "\"+ Log a call\" / \"+ Log a meeting\" in the client drawer's Activity tab. Same inline bordered-box pattern as the drawer's existing \"+ Add contact\" form -- a short capture form stays inline in the flow rather than opening a modal.",
       "html": "<div class=\"ds-log-form\"><div class=\"ds-log-form-title\">Log a call</div><textarea class=\"ds-log-form-field\" placeholder=\"Notes\"></textarea><input class=\"ds-log-form-field\" type=\"date\" value=\"2026-07-24\"/><div class=\"ds-log-form-actions\"><button class=\"ds-log-form-save\">Save</button><button class=\"ds-log-form-cancel\">Cancel</button></div></div>",
-      "css": ".ds-log-form { border: 1px solid var(--border2, #ccc7b9); border-radius: 10px; padding: 12px 13px; background: var(--hover, #e8e4da); } .ds-log-form-title { font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; color: var(--text-primary, #2a2a28); margin-bottom: 8px; } .ds-log-form-field { width: 100%; padding: 8px 11px; border-radius: 8px; border: 1px solid var(--border, #ddd8cc); background: var(--bg, #ece8e0); color: var(--text-primary, #2a2a28); font-family: Inter, sans-serif; font-size: 13.5px; box-sizing: border-box; margin-bottom: 8px; } .ds-log-form-actions { display: flex; gap: 8px; } .ds-log-form-save { flex: 1; padding: 8px; border-radius: 8px; border: none; background: var(--signal-green, #0f6e56); color: #fff; font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; } .ds-log-form-cancel { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border2, #ccc7b9); background: transparent; color: var(--text-tertiary, #827d6f); font-family: Inter, sans-serif; font-size: 13px; cursor: pointer; }"
+      "css": ".ds-log-form { border: 1px solid var(--border2, #ccc7b9); border-radius: 10px; padding: 12px 13px; background: var(--hover, #e8e4da); } .ds-log-form-title { font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; color: var(--text-primary, #2a2a28); margin-bottom: 8px; } .ds-log-form-field { width: 100%; padding: 8px 11px; border-radius: 8px; border: 1px solid var(--border, #ddd8cc); background: var(--bg, #ece8e0); color: var(--text-primary, #2a2a28); font-family: Inter, sans-serif; font-size: 13.5px; box-sizing: border-box; margin-bottom: 8px; } .ds-log-form-actions { display: flex; gap: 8px; } .ds-log-form-save { flex: 1; padding: 8px; border-radius: 8px; border: none; background: var(--brand-indigo, #3452c4); color: #fff; font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; } .ds-log-form-cancel { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border2, #ccc7b9); background: transparent; color: var(--text-tertiary, #827d6f); font-family: Inter, sans-serif; font-size: 13px; cursor: pointer; }"
     },
     {
       "name": "Activity Row",
       "kind": "custom",
       "description": "Timeline row for a logged activity (call/meeting/email/deal move/contact/quote event). Circular type-colored icon on a connecting vertical line, title/description/meta stack.",
-      "html": "<div class=\"ds-activity-row\"><span class=\"ds-activity-icon\">☎</span><div class=\"ds-activity-body\"><div class=\"ds-activity-title\">Call logged</div><div class=\"ds-activity-desc\">Discussed Q3 renewal terms, they want a 10% volume discount.</div><div class=\"ds-activity-meta\"><span>Marcus Chen</span><span>4 min ago</span></div></div></div>",
+      "html": "<div class=\"ds-activity-row\"><span class=\"ds-activity-icon\">\u260e</span><div class=\"ds-activity-body\"><div class=\"ds-activity-title\">Call logged</div><div class=\"ds-activity-desc\">Discussed Q3 renewal terms, they want a 10% volume discount.</div><div class=\"ds-activity-meta\"><span>Marcus Chen</span><span>4 min ago</span></div></div></div>",
       "css": ".ds-activity-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 8px; border-radius: 10px; } .ds-activity-icon { width: 20px; height: 20px; border-radius: 50%; background: var(--confirmed-green, #14735d); display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; flex-shrink: 0; } .ds-activity-title { font-family: Inter, sans-serif; font-size: 14px; font-weight: 600; color: var(--text-primary, #2a2a28); } .ds-activity-desc { font-family: Inter, sans-serif; font-size: 13px; color: var(--text-secondary, #57534a); margin-top: 2px; } .ds-activity-meta { display: flex; gap: 12px; margin-top: 4px; font-size: 12px; color: var(--text-tertiary, #827d6f); }"
     }
   ],
   "narrative": {
     "northStar": "The Early Warning System",
-    "overview": "RetainIQ's interface is an instrument panel for catching account risk before it becomes churn, not a decorative CRM shell. Every recurring visual device — the pulsing live-status dot, the risk gauge, the color-coded journey stages — exists to answer one question at a glance: is this account fine, or does it need a call today. Signal Green is deliberately the resting/all-clear state; Amber and Red are reserved for escalating alarm, and that reservation is the entire point of the palette.\n\nThe voice is calm and clinical: dense data surfaces (KPI grids, sortable tables, drawers packed with contract detail) rendered with soft ambient shadows, restrained 8–16px radii, and a single typeface (Inter) carrying the whole hierarchy through weight and size rather than mixed fonts. Motion is present but purposeful — spring-eased panels, staggered card fade-ups, a pulsing dot on live status — never decorative for its own sake. The system supports full light/dark theming through CSS custom properties; almost every surface, text, and accent color routes through a var(--token) rather than a literal value.",
+    "overview": "RetainIQ's interface is an instrument panel for catching account risk before it becomes churn, not a decorative CRM shell. Every recurring visual device \u2014 the pulsing live-status dot, the risk gauge, the color-coded journey stages \u2014 exists to answer one question at a glance: is this account fine, or does it need a call today. Amber and Red are reserved for escalating alarm, and Green is reserved for the confirmed/all-clear reading \u2014 that reservation is the entire point of the palette.\n\nRevision note (Visualization v2): the system originally used one green (--cyan/--brand-bright) for both the brand/interactive accent and the \"healthy\" semantic reading. That collision \u2014 a primary button and a \"this account is fine\" badge reading as the same color \u2014 made the product feel generic and was deliberately split: brand/interactive actions now route through a dedicated Brand Indigo accent, while Green is reserved purely for semantic healthy/confirmed status. The former One Font Rule (Inter for the entire hierarchy) has similarly been superseded by a three-part type system.\n\nThe voice is calm and clinical: dense data surfaces (KPI grids, sortable tables, drawers packed with contract detail) rendered with soft ambient shadows, restrained 8\u201316px radii, and a small, deliberate type system (display / mono-stat / body) carrying the hierarchy. Motion is present but purposeful \u2014 spring-eased panels, staggered card fade-ups, a pulsing dot on live status \u2014 never decorative for its own sake. The system supports full light/dark theming through CSS custom properties; almost every surface, text, and accent color routes through a var(--token) rather than a literal value.",
     "keyCharacteristics": [
-      "One typeface (Inter) for the entire hierarchy — no serif/mono pairing despite what older project docs claim.",
-      "Signal Green as the calm baseline; Amber/Red exist only to signal escalating risk.",
+      "A three-part type system: Space Grotesk for page titles/display, JetBrains Mono (tabular figures) for stat-card numbers, Inter for everything else.",
+      "Brand Indigo (--cyan/--brand-bright) as the interactive accent, kept distinct from Green (the healthy/confirmed semantic reading) and from Amber/Red (escalating risk).",
       "Flat-by-default surfaces with soft ambient shadows at rest, deeper directional shadows on overlays.",
-      "Small, consistent radii (6–16px) plus a 999px pill for filters and status pills — no sharp corners, no heavy rounding.",
+      "Small, consistent radii (6\u201316px) plus a 999px pill for filters and status pills \u2014 no sharp corners, no heavy rounding.",
       "Full light/dark theming via CSS custom properties, with a brighter accent variant (--brand-bright) swapped in for dark mode where the flat brand color would go flat against a dark surface."
     ],
     "rules": [
-      { "name": "The Reserved Alarm Rule", "body": "Amber and Red never appear as decoration or as a general accent — they exist exclusively to mark At-Risk and Critical/Expired states. If a new element needs an eye-catching color without implying risk, reach for Signal Green or AI Purple, never Amber/Red.", "section": "colors" },
-      { "name": "The Bright Variant Rule", "body": "Dark theme doesn't just invert lightness — where the flat brand accent (--cyan, #0f6e56) would read flat against a dark surface, dark mode swaps in a distinct brighter token (--brand-bright, #6FD9B7) for foregrounded uses like active nav text and the logo.", "section": "colors" },
-      { "name": "The One Font Rule", "body": "Every weight and size in the system comes from Inter. Do not introduce a second family for \"editorial\" or \"technical\" flavor — hierarchy is built with size, weight, and letter-spacing, not font mixing.", "section": "typography" },
-      { "name": "The Directional Shadow Rule", "body": "An overlay's shadow points toward the edge it emerged from, reinforcing where it came from and that it's temporary. A modal, which has no single edge of origin, gets an omnidirectional shadow instead.", "section": "elevation" },
-      { "name": "The No-Default-Recharts Rule", "body": "Every recharts prop with a visual default (line color, grid, tooltip box, tick font) must be explicitly overridden with a system token before shipping, and every chart declares accessibilityLayer plus a descriptive aria-label. An unstyled recharts chart is an instant tell.", "section": "components" },
-      { "name": "The Precise Recency Rule", "body": "\"Time ago\" displays must be computed from a precise timestamp (loggedAt/created_at), never from a day-only date field -- a day-only value can never honestly render \"just now\". Keep a separate user-editable date field only when backdating the event itself matters to the feature.", "section": "components" }
+      {
+        "name": "The Reserved Alarm Rule",
+        "body": "Amber and Red never appear as decoration or as a general accent \u2014 they exist exclusively to mark At-Risk and Critical/Expired states. If a new element needs an eye-catching color without implying risk, reach for Signal Green or AI Purple, never Amber/Red.",
+        "section": "colors"
+      },
+      {
+        "name": "The Bright Variant Rule",
+        "body": "Dark theme doesn't just invert lightness \u2014 where the flat brand accent (--cyan, #3452c4) would read flat against a dark surface, dark mode swaps in a distinct brighter token (--brand-bright, #96A3FF) for foregrounded uses like active nav text and the logo.",
+        "section": "colors"
+      },
+      {
+        "name": "The Brand/Status Separation Rule",
+        "body": "--cyan/--brand-bright (Brand Indigo) marks interactive elements \u2014 anything clickable, active, or focused. --green (Confirmed Green) marks semantic healthy/confirmed status. The two must never be the same hue: a new component reaching for \"the accent color\" needs to first ask whether it's marking an action (brand indigo) or a status (matching semantic color).",
+        "section": "colors"
+      },
+      {
+        "name": "The Two-Font Ceiling",
+        "body": "Space Grotesk (display) and JetBrains Mono (stat figures) are the only two families layered on top of Inter, each with one narrow, non-overlapping job \u2014 headings, and numbers, respectively. Do not add a third family, and do not use Space Grotesk or JetBrains Mono outside their designated role.",
+        "section": "typography"
+      },
+      {
+        "name": "The Directional Shadow Rule",
+        "body": "An overlay's shadow points toward the edge it emerged from, reinforcing where it came from and that it's temporary. A modal, which has no single edge of origin, gets an omnidirectional shadow instead.",
+        "section": "elevation"
+      },
+      {
+        "name": "The No-Default-Recharts Rule",
+        "body": "Every recharts prop with a visual default (line color, grid, tooltip box, tick font) must be explicitly overridden with a system token before shipping, and every chart declares accessibilityLayer plus a descriptive aria-label. An unstyled recharts chart is an instant tell.",
+        "section": "components"
+      },
+      {
+        "name": "The Precise Recency Rule",
+        "body": "\"Time ago\" displays must be computed from a precise timestamp (loggedAt/created_at), never from a day-only date field -- a day-only value can never honestly render \"just now\". Keep a separate user-editable date field only when backdating the event itself matters to the feature.",
+        "section": "components"
+      }
     ],
     "dos": [
       "Do route every color through the existing CSS custom-property tokens (var(--bg), var(--cyan), var(--text2), etc.) so new UI themes automatically between light and dark.",
       "Do use --brand-bright instead of --cyan for any element foregrounded on a dark surface (active nav, logo mark), per the Bright Variant Rule.",
+      "Do keep --cyan/--brand-bright (Brand Indigo) for interactive elements and --green (Confirmed Green) for semantic healthy status, never the reverse, per the Brand/Status Separation Rule.",
       "Do reserve Amber/Red exclusively for At-Risk / Critical-Expired states, per the Reserved Alarm Rule.",
       "Do give overlay surfaces (drawers, side panels, modals) a shadow directional to the edge they emerge from; give modals an omnidirectional shadow instead.",
-      "Do follow the inline-style + CSS-variable pattern already used in every pages/ and components/ file for new UI — that is the actual, active design system.",
-      "Do override every recharts default (line color, grid, tooltip, tick font) with a system token and set accessibilityLayer before shipping a chart, per Components → Charts (Recharts).",
+      "Do follow the inline-style + CSS-variable pattern already used in every pages/ and components/ file for new UI \u2014 that is the actual, active design system.",
+      "Do override every recharts default (line color, grid, tooltip, tick font) with a system token and set accessibilityLayer before shipping a chart, per Components \u2192 Charts (Recharts).",
       "Do compute \"time ago\" displays from a precise timestamp (loggedAt/created_at), never a day-only date field, per the Precise Recency Rule."
     ],
     "donts": [
-      "Don't add new component classes to App.css. It's a legacy stylesheet from an earlier iteration of the UI: no page or component references any of its .card / .btn / .stat-card / .terminal-panel classes (or most of its keyframes) anymore — only the :root/[data-theme=\"dark\"] variable declarations and the spin keyframe are still live.",
-      "Don't introduce a second typeface. Inter carries the entire hierarchy; treat the README's \"Space Mono • DM Sans\" line as stale, not a spec.",
-      "Don't copy the hardcoded status-chip hex pairs for new status/severity UI — route new work through the token system instead of replicating that inconsistency.",
+      "Don't add new component classes to App.css. It's a legacy stylesheet from an earlier iteration of the UI: no page or component references any of its .card / .btn / .stat-card / .terminal-panel classes (or most of its keyframes) anymore \u2014 only the :root/[data-theme=\"dark\"] variable declarations and the spin keyframe are still live.",
+      "Don't add a third typeface, or use Space Grotesk/JetBrains Mono outside their designated display/stat roles, per the Two-Font Ceiling.",
+      "Don't copy the hardcoded status-chip hex pairs for new status/severity UI \u2014 route new work through the token system instead of replicating that inconsistency.",
       "Don't use Amber or Red as a general-purpose accent color; they carry risk meaning everywhere else in the product.",
-      "Don't color a routine CRUD action (add/edit/delete) Amber or Red just because it needs some accent — this app's Delete buttons are neutral (--text3); reserve Amber/Red for actual risk states."
+      "Don't color a routine CRUD action (add/edit/delete) Amber or Red just because it needs some accent \u2014 this app's Delete buttons are neutral (--text3); reserve Amber/Red for actual risk states."
     ]
   }
 }

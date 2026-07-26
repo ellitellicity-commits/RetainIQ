@@ -20,7 +20,7 @@ import "./App.css";
 
 const API =
   window.location.hostname === "localhost"
-    ? "http://127.0.0.1:5000"
+    ? "http://127.0.0.1:5001" // TEMP: local dev port override, port 5000 is squatted by macOS AirPlay Receiver on this machine. REVERT to 5000 before committing.
     : "https://retainiq-thunderhacks-2026.onrender.com";
 
 const ICONS = {
@@ -158,7 +158,7 @@ export default function App() {
         title={expanded ? "" : tab.label} aria-label={tab.label}
         style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: expanded ? "flex-start" : "center",
           padding: expanded ? "10px 12px" : "10px 0", borderRadius: 9, border: "none", cursor: "pointer",
-          background: active ? "rgba(15,110,86,0.18)" : "transparent",
+          background: active ? "var(--cyan-dim)" : "transparent",
           color: active ? "var(--brand-bright)" : "var(--text2)", fontFamily: "Inter", fontSize: 14.5, fontWeight: 500,
           whiteSpace: "nowrap", width: "100%", textAlign: "left", transition: "background .12s" }}
         onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = "var(--hover2)"; }}
