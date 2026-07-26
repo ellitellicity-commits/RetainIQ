@@ -20,7 +20,7 @@ import "./App.css";
 
 const API =
   window.location.hostname === "localhost"
-    ? "http://127.0.0.1:5001" // TEMP: local dev port override, port 5000 is squatted by macOS AirPlay Receiver on this machine. REVERT to 5000 before committing.
+    ? "http://127.0.0.1:5000"
     : "https://retainiq-thunderhacks-2026.onrender.com";
 
 const ICONS = {
