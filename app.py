@@ -6,6 +6,10 @@ from model import load_and_train, get_dataframe, score_new_customer, _assign_sta
 from database import get_db, init_db, seed_if_empty, ensure_todays_retention_snapshot
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY")
+
+from auth_api import auth_bp
+app.register_blueprint(auth_bp)
 from contacts_api import contacts_bp
 app.register_blueprint(contacts_bp)
 from quotes_api import quotes_bp, ensure_schema as ensure_quotes_schema
