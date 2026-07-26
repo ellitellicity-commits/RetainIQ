@@ -298,7 +298,7 @@ export default function App() {
         {page === "journey"   && <Journey API={API} pageAction={pageAction} clearAction={() => setPageAction(null)} openDealId={openDealId} clearOpenDeal={() => setOpenDealId(null)} />}
         {page === "quotes"    && <Quotes API={API} onOpenDeal={openDealInPipeline} />}
         {page === "alerts"    && <Alerts API={API} />}
-        {page === "copilot"   && <CopilotPage />}
+        {page === "copilot"   && <CopilotPage API={API} onOpenDeal={openDealInPipeline} />}
         {page === "tasks"     && <Tasks pageAction={pageAction} clearAction={() => setPageAction(null)} />}
         {page === "sequences" && <EmailSequences />}
         {page === "automations" && <Automations />}

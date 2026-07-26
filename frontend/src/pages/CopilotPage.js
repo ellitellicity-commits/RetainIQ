@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
 import RelationshipMap from "../components/RelationshipMap";
 import { DEAL_INSIGHTS, MEETING_PREPS, RELATIONSHIP_MAP, NEXT_BEST_ACTIONS } from "../data/mockData";
 import useBreakpoint from "../hooks/useBreakpoint";
@@ -21,6 +22,16 @@ const ICONS = {
       <line x1="12" y1="17" x2="12.01" y2="17" />
     </svg>
   ),
+  chevron: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  ),
+  externalLink: (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
+    </svg>
+  ),
 };
 
 function getSeverityColor(severity) {
@@ -39,8 +50,88 @@ function getWarmthLabel(warmth) {
   return "cold";
 }
 
-export default function CopilotPage() {
+function DealInsightCard({ insight, matchedDeal, onOpenDeal }) {
+  const [expanded, setExpanded] = useState(true);
+  const fillRef = useRef(null);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    if (!fillRef.current || hasAnimated.current) return;
+    hasAnimated.current = true;
+    gsap.fromTo(
+      fillRef.current,
+      { width: "0%" },
+      { width: `${insight.confidence * 100}%`, duration: 0.9, ease: "power2.out", delay: 0.15 }
+    );
+  }, [insight.confidence]);
+
+  return (
+    <div style={{ background: "var(--bg, color-mix(in srgb, var(--card) 80%, black))", border: "1px solid var(--border)", borderRadius: "var(--radius)", overflow: "hidden" }}>
+      {/* Header row -- always visible, toggles the detail below */}
+      <button
+        onClick={() => setExpanded((e) => !e)}
+        style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "16px 18px", background: "none", border: "none", cursor: "pointer", textAlign: "left", font: "inherit" }}
+      >
+        <span
+          style={{
+            fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em",
+            color: getSeverityColor(insight.severity),
+            background: `color-mix(in srgb, ${getSeverityColor(insight.severity)} 12%, transparent)`,
+            padding: "3px 9px", borderRadius: 10, flexShrink: 0,
+          }}
+        >
+          {insight.severity}
+        </span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", flex: 1 }}>{insight.title}</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "var(--cyan)", flexShrink: 0 }}>{insight.impact}</span>
+        <span style={{ display: "flex", color: "var(--text3)", transition: "transform 0.2s", transform: expanded ? "rotate(0deg)" : "rotate(-90deg)", flexShrink: 0 }}>
+          {ICONS.chevron}
+        </span>
+      </button>
+
+      {expanded && (
+        <div style={{ padding: "0 18px 16px" }}>
+          <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 12, lineHeight: 1.5 }}>{insight.reason}</div>
+
+          <div style={{ fontSize: 12, color: "var(--text2)", padding: "10px 14px", background: "color-mix(in srgb, var(--cyan) 6%, transparent)", borderRadius: "var(--radius)", borderLeft: "3px solid var(--cyan)", lineHeight: 1.5, marginBottom: 12 }}>
+            <span style={{ fontWeight: 700, color: "var(--cyan)", fontSize: 10, textTransform: "uppercase", display: "block", marginBottom: 3 }}>Recommendation</span>
+            {insight.recommendation}
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: matchedDeal ? 10 : 0 }}>
+            <span style={{ fontSize: 11, color: "var(--text3)", fontWeight: 500 }}>Confidence</span>
+            <div style={{ flex: 1, height: 5, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
+              <div ref={fillRef} style={{ width: 0, height: "100%", background: "var(--cyan)", borderRadius: 3 }} />
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text2)", minWidth: 32, textAlign: "right" }}>
+              {Math.round(insight.confidence * 100)}%
+            </span>
+          </div>
+
+          {matchedDeal && onOpenDeal && (
+            <button
+              onClick={() => onOpenDeal(matchedDeal.id)}
+              style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", padding: 0, color: "var(--cyan)", fontSize: 11.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+            >
+              {ICONS.externalLink} View {insight.dealName} in Pipeline
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function CopilotPage({ API, onOpenDeal }) {
   const { isMobile } = useBreakpoint();
+  const [deals, setDeals] = useState([]);
+
+  useEffect(() => {
+    if (!API) return;
+    fetch(`${API}/api/db/deals`).then((r) => r.json()).then((d) => setDeals(Array.isArray(d) ? d : [])).catch(() => setDeals([]));
+  }, [API]);
+
+  const dealFor = (dealName) => deals.find((d) => (d.company || "").toLowerCase() === (dealName || "").toLowerCase());
   const [selectedMapIndex, setSelectedMapIndex] = useState(0);
   const [selectedMeetingCompany, setSelectedMeetingCompany] = useState(Object.keys(MEETING_PREPS)[0]);
 
@@ -341,90 +432,7 @@ export default function CopilotPage() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {DEAL_INSIGHTS.map((insight) => (
-            <div
-              key={insight.id}
-              style={{
-                padding: "16px 18px",
-                background: "var(--bg, color-mix(in srgb, var(--card) 80%, black))",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius)",
-              }}
-            >
-              {/* Header row */}
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                    color: getSeverityColor(insight.severity),
-                    background: `color-mix(in srgb, ${getSeverityColor(insight.severity)} 12%, transparent)`,
-                    padding: "3px 9px",
-                    borderRadius: 10,
-                  }}
-                >
-                  {insight.severity}
-                </span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", flex: 1 }}>
-                  {insight.title}
-                </span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--cyan)" }}>
-                  {insight.impact}
-                </span>
-              </div>
-
-              {/* Reason */}
-              <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 12, lineHeight: 1.5 }}>
-                {insight.reason}
-              </div>
-
-              {/* Recommendation */}
-              <div
-                style={{
-                  fontSize: 12,
-                  color: "var(--text2)",
-                  padding: "10px 14px",
-                  background: "color-mix(in srgb, var(--cyan) 6%, transparent)",
-                  borderRadius: "var(--radius)",
-                  borderLeft: "3px solid var(--cyan)",
-                  lineHeight: 1.5,
-                  marginBottom: 12,
-                }}
-              >
-                <span style={{ fontWeight: 700, color: "var(--cyan)", fontSize: 10, textTransform: "uppercase", display: "block", marginBottom: 3 }}>
-                  Recommendation
-                </span>
-                {insight.recommendation}
-              </div>
-
-              {/* Confidence bar */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 11, color: "var(--text3)", fontWeight: 500 }}>Confidence</span>
-                <div
-                  style={{
-                    flex: 1,
-                    height: 5,
-                    background: "var(--border)",
-                    borderRadius: 3,
-                    overflow: "hidden",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: `${insight.confidence * 100}%`,
-                      height: "100%",
-                      background: "var(--cyan)",
-                      borderRadius: 3,
-                      transition: "width 0.3s ease",
-                    }}
-                  />
-                </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text2)", minWidth: 32, textAlign: "right" }}>
-                  {Math.round(insight.confidence * 100)}%
-                </span>
-              </div>
-            </div>
+            <DealInsightCard key={insight.id} insight={insight} matchedDeal={dealFor(insight.dealName)} onOpenDeal={onOpenDeal} />
           ))}
         </div>
       </div>
