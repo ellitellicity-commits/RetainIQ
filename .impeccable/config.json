@@ -1,0 +1,20 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-color",
+        "value": "#fff",
+        "createdAt": "2026-07-25T00:48:22.958Z",
+        "reason": "Matches DESIGN.md's documented button-primary.textColor: #ffffff spec, used consistently for text/icons on filled Signal-Green/Cyan buttons throughout the app (AICopilotPanel.js, App.js, ChatWidget.js)"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "rgba(255,255,255,0.35)",
+        "createdAt": "2026-07-26T21:21:32.464Z",
+        "reason": "Spinner ring's inactive track on the solid indigo submit button (Login.js) -- needs a literal light color for contrast against a filled brand-color button, same category as the existing approved #fff exception for text/icons on filled Signal-Green/Cyan buttons."
+      }
+    ]
+  }
+}

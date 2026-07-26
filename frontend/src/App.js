@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Upload from "./pages/Upload";
 import Customers from "./pages/Customers";
@@ -41,6 +42,11 @@ const MOON = (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke
 
 export default function App() {
   const { isMobile } = useBreakpoint();
+  const [authUser, setAuthUser] = useState(null);
+  const [authToken, setAuthToken] = useState(() => {
+    try { return localStorage.getItem("riq_auth_token"); } catch (e) { return null; }
+  });
+  const [authChecked, setAuthChecked] = useState(false);
   const [page, setPage] = useState("dashboard");
   const [uploaded, setUploaded] = useState(true);
   const [collapsed, setCollapsed] = useState(() => {
@@ -53,6 +59,33 @@ export default function App() {
   const [pageAction, setPageAction] = useState(null);
   const [openDealId, setOpenDealId] = useState(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    if (!authToken) { setAuthChecked(true); return; }
+    let cancelled = false;
+    fetch(`${API}/api/auth/me`, { headers: { Authorization: `Bearer ${authToken}` } })
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => { if (!cancelled) setAuthUser(data.user); })
+      .catch(() => {
+        if (cancelled) return;
+        try { localStorage.removeItem("riq_auth_token"); } catch (e) {}
+        setAuthToken(null);
+      })
+      .finally(() => { if (!cancelled) setAuthChecked(true); });
+    return () => { cancelled = true; };
+  }, [authToken]);
+
+  const handleAuthenticated = (user, token) => {
+    try { localStorage.setItem("riq_auth_token", token); } catch (e) {}
+    setAuthToken(token);
+    setAuthUser(user);
+  };
+
+  const handleLogout = () => {
+    try { localStorage.removeItem("riq_auth_token"); } catch (e) {}
+    setAuthToken(null);
+    setAuthUser(null);
+  };
 
   useEffect(() => { if (!isMobile) setMobileNavOpen(false); }, [isMobile]);
 
@@ -140,6 +173,13 @@ export default function App() {
     { id: "automations", label: "Automations" },
   ];
 
+  if (!authChecked) {
+    return <div style={{ minHeight: "100vh", background: "var(--bg)" }} />;
+  }
+  if (!authUser) {
+    return <Login API={API} onAuthenticated={handleAuthenticated} />;
+  }
+
   if (!uploaded) return <Upload API={API} onUpload={() => setUploaded(true)} onSkip={() => setUploaded(true)} onCancel={() => setUploaded(true)} />;
 
   const SIDEBAR_W = collapsed ? 66 : 222;
@@ -199,6 +239,16 @@ export default function App() {
         </span>
         {(afterClick || !collapsed) && "Change data"}
       </motion.button>
+
+      <button onClick={() => { handleLogout(); if (afterClick) afterClick(); }} title={collapsed && !afterClick ? "Log out" : ""} aria-label="Log out"
+        style={ghostBtn}
+        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover2)")}
+        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+        <span style={{ display: "flex", flex: "0 0 auto" }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </span>
+        {(afterClick || !collapsed) && "Log out"}
+      </button>
     </>
   );
 
