@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import RelationshipMap from "../components/RelationshipMap";
+import CountUp from "../components/CountUp";
+import { cardHoverProps } from "../utils/cardHover";
 import { DEAL_INSIGHTS, MEETING_PREPS, RELATIONSHIP_MAP, NEXT_BEST_ACTIONS } from "../data/mockData";
 import useBreakpoint from "../hooks/useBreakpoint";
 
@@ -184,7 +186,7 @@ export default function CopilotPage({ API, onOpenDeal }) {
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 16 }}>
           <StatCard label="Active Insights" value={DEAL_INSIGHTS.length} color="var(--cyan)" />
           <StatCard label="Actions Pending" value={NEXT_BEST_ACTIONS.length} color="var(--amber)" />
-          <StatCard label="Avg Confidence" value={`${avgConfidence}%`} color="var(--green)" />
+          <StatCard label="Avg Confidence" value={avgConfidence} format={(v) => Math.round(v) + "%"} color="var(--green)" />
         </div>
       </div>
 
@@ -440,9 +442,10 @@ export default function CopilotPage({ API, onOpenDeal }) {
   );
 }
 
-function StatCard({ label, value, color }) {
+function StatCard({ label, value, format, color }) {
   return (
     <div
+      {...cardHoverProps}
       style={{
         background: "var(--card)",
         border: "1px solid var(--border)",
@@ -461,7 +464,7 @@ function StatCard({ label, value, color }) {
           letterSpacing: "-0.01em",
         }}
       >
-        {value}
+        <CountUp value={value} format={format} />
       </div>
       <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
         {label}

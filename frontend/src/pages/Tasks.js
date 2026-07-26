@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import TaskList from "../components/TaskList";
+import CountUp from "../components/CountUp";
+import { liftHoverProps } from "../utils/cardHover";
 import { TASKS } from "../data/mockData";
 import useBreakpoint from "../hooks/useBreakpoint";
 
@@ -122,7 +124,7 @@ export default function Tasks({ pageAction, clearAction }) {
       {/* Stats Row */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: 14, marginBottom: 22 }}>
         {stats.map(s => (
-          <div key={s.label} style={{
+          <div key={s.label} {...liftHoverProps} style={{
             display: "flex", alignItems: "center", gap: 14,
             background: "var(--card)", border: "1px solid var(--border2)",
             borderLeft: "3px solid " + s.color, borderRadius: "var(--radius)",
@@ -134,7 +136,7 @@ export default function Tasks({ pageAction, clearAction }) {
             </span>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 3, fontWeight: 500 }}>{s.label}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 600, color: s.color, letterSpacing: -0.3, lineHeight: 1 }}>{s.value}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 600, color: s.color, letterSpacing: -0.3, lineHeight: 1 }}><CountUp value={s.value} /></div>
             </div>
           </div>
         ))}

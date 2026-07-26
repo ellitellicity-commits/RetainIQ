@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import CountUp from "../components/CountUp";
+import { cardHoverProps } from "../utils/cardHover";
 import { AUTOMATION_RULES } from "../data/mockData";
 import useBreakpoint from "../hooks/useBreakpoint";
 
@@ -66,7 +68,7 @@ export default function Automations() {
           pulsing dot for Active Rules (the same "is this fine right now" device
           DESIGN.md calls out elsewhere), Total Triggers as the one true stat number,
           Last Triggered demoted to a caption since a date doesn't read well as a stat digit. */}
-      <div style={{
+      <div {...cardHoverProps} style={{
         display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center",
         gap: isMobile ? 12 : 28, background: "var(--card)", border: "1px solid var(--border2)", borderRadius: "var(--radius)",
         padding: "14px 22px", boxShadow: "var(--shadow)", marginBottom: 26,
@@ -78,14 +80,14 @@ export default function Automations() {
             )}
             <span style={{ width: 9, height: 9, borderRadius: "50%", background: activeRules.length > 0 ? "var(--green)" : "var(--text3)" }} />
           </span>
-          <span style={{ fontSize: 13, color: "var(--text)", fontWeight: 600 }}>{activeRules.length} active</span>
+          <span style={{ fontSize: 13, color: "var(--text)", fontWeight: 600 }}><CountUp value={activeRules.length} /> active</span>
           <span style={{ fontSize: 13, color: "var(--text3)" }}>of {rules.length} rule{rules.length === 1 ? "" : "s"}</span>
         </div>
 
         {!isMobile && <div style={{ width: 1, height: 24, background: "var(--border)" }} />}
 
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 600, color: "var(--cyan)", letterSpacing: -0.3 }}>{totalTriggers}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 600, color: "var(--cyan)", letterSpacing: -0.3 }}><CountUp value={totalTriggers} /></span>
           <span style={{ fontSize: 12.5, color: "var(--text3)" }}>total triggers</span>
         </div>
 

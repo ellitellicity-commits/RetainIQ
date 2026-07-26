@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import CountUp from "../components/CountUp";
+import { cardHoverProps } from "../utils/cardHover";
 import { EMAIL_SEQUENCES } from "../data/mockData";
 import useBreakpoint from "../hooks/useBreakpoint";
 
@@ -54,7 +56,6 @@ export default function EmailSequences() {
   const stats = [
     { label: "Active Sequences", value: activeSequences.length, color: "var(--green)" },
     { label: "Total Enrolled", value: totalEnrolled, color: "var(--blue)" },
-    { label: "Avg Reply Rate", value: avgReplyRate + "%", color: "var(--cyan)" },
   ];
 
   const stepStatusColor = (status) => {
@@ -122,7 +123,7 @@ export default function EmailSequences() {
 
       {/* Stats Strip -- one instrument cluster instead of three separate cards, echoing
           the circular step-tracker motif below with a reply-rate ring. */}
-      <div style={{
+      <div {...cardHoverProps} style={{
         display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "stretch" : "center",
         background: "var(--card)", border: "1px solid var(--border2)", borderRadius: "var(--radius)",
         padding: isMobile ? "18px 20px" : "10px 8px", boxShadow: "var(--shadow)", marginBottom: 26, gap: isMobile ? 16 : 0,
@@ -131,7 +132,7 @@ export default function EmailSequences() {
           <React.Fragment key={s.label}>
             <div style={{ flex: 1, padding: isMobile ? 0 : "10px 22px" }}>
               <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 6, fontWeight: 500 }}>{s.label}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 26, fontWeight: 600, color: s.color, letterSpacing: -0.3 }}>{s.value}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 26, fontWeight: 600, color: s.color, letterSpacing: -0.3 }}><CountUp value={s.value} /></div>
             </div>
             {!isMobile && <div style={{ width: 1, alignSelf: "stretch", background: "var(--border)" }} />}
           </React.Fragment>
@@ -144,7 +145,7 @@ export default function EmailSequences() {
           </svg>
           <div>
             <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 4, fontWeight: 500 }}>Avg Reply Rate</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 600, color: "var(--cyan)", letterSpacing: -0.3 }}>{avgReplyRate}%</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 600, color: "var(--cyan)", letterSpacing: -0.3 }}><CountUp value={avgReplyRate} format={(v) => Math.round(v) + "%"} /></div>
           </div>
         </div>
       </div>

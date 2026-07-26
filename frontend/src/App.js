@@ -14,6 +14,7 @@ import Automations from "./pages/Automations";
 import CommandPalette from "./components/CommandPalette";
 import NotificationCenter from "./components/NotificationCenter";
 import ChatWidget from "./components/ChatWidget";
+import PageTransition from "./components/PageTransition";
 import useBreakpoint from "./hooks/useBreakpoint";
 import "./App.css";
 
@@ -292,16 +293,18 @@ export default function App() {
           <NotificationCenter API={API} />
         </div>
 
-        {page === "dashboard" && <Dashboard API={API} />}
-        {page === "customers" && <Customers API={API} pageAction={pageAction} clearAction={() => setPageAction(null)} />}
-        {page === "contacts"  && <Contacts API={API} />}
-        {page === "journey"   && <Journey API={API} pageAction={pageAction} clearAction={() => setPageAction(null)} openDealId={openDealId} clearOpenDeal={() => setOpenDealId(null)} />}
-        {page === "quotes"    && <Quotes API={API} onOpenDeal={openDealInPipeline} />}
-        {page === "alerts"    && <Alerts API={API} />}
-        {page === "copilot"   && <CopilotPage API={API} onOpenDeal={openDealInPipeline} />}
-        {page === "tasks"     && <Tasks pageAction={pageAction} clearAction={() => setPageAction(null)} />}
-        {page === "sequences" && <EmailSequences />}
-        {page === "automations" && <Automations />}
+        <PageTransition pageKey={page}>
+          {page === "dashboard" && <Dashboard API={API} />}
+          {page === "customers" && <Customers API={API} pageAction={pageAction} clearAction={() => setPageAction(null)} />}
+          {page === "contacts"  && <Contacts API={API} />}
+          {page === "journey"   && <Journey API={API} pageAction={pageAction} clearAction={() => setPageAction(null)} openDealId={openDealId} clearOpenDeal={() => setOpenDealId(null)} />}
+          {page === "quotes"    && <Quotes API={API} onOpenDeal={openDealInPipeline} />}
+          {page === "alerts"    && <Alerts API={API} />}
+          {page === "copilot"   && <CopilotPage API={API} onOpenDeal={openDealInPipeline} />}
+          {page === "tasks"     && <Tasks pageAction={pageAction} clearAction={() => setPageAction(null)} />}
+          {page === "sequences" && <EmailSequences />}
+          {page === "automations" && <Automations />}
+        </PageTransition>
       </main>
 
       <CommandPalette open={cmdKOpen} onClose={() => setCmdKOpen(false)} onNavigate={handleCmdNavigate} />

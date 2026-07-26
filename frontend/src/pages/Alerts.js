@@ -3,6 +3,8 @@ import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Cell, LabelList, ReferenceDot,
 } from "recharts";
+import CountUp from "../components/CountUp";
+import { cardHoverProps } from "../utils/cardHover";
 import useBreakpoint from "../hooks/useBreakpoint";
 
 const PROB = { "New Leads": 0.10, "Qualified": 0.25, "Demo": 0.40, "Quote sent": 0.60, "Negotiation": 0.80 };
@@ -149,10 +151,10 @@ export default function Analytics({ API }) {
   const maxFunnel = Math.max(1, ...funnel.map(f => f.value));
 
   const kpis = [
-    { label: "Pipeline value", value: fmtBig(pipelineValue), color: "var(--text)" },
-    { label: "Weighted forecast", value: fmtBig(weighted), color: "var(--brand-bright)" },
-    { label: "Win rate", value: winRate + "%", color: "#97C459" },
-    { label: "Avg deal size", value: fmtBig(avgDeal), color: "var(--text)" },
+    { label: "Pipeline value", value: pipelineValue, format: fmtBig, color: "var(--text)" },
+    { label: "Weighted forecast", value: weighted, format: fmtBig, color: "var(--brand-bright)" },
+    { label: "Win rate", value: winRate, format: (v) => Math.round(v) + "%", color: "#97C459" },
+    { label: "Avg deal size", value: avgDeal, format: fmtBig, color: "var(--text)" },
   ];
 
   const metrics = [
@@ -180,9 +182,9 @@ export default function Analytics({ API }) {
 
       <div style={{ display: "grid", gridTemplateColumns: kpiColumns, gap: 14, marginBottom: 18 }}>
         {kpis.map(k => (
-          <div key={k.label} style={card}>
+          <div key={k.label} style={card} {...cardHoverProps}>
             <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 8 }}>{k.label}</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 26, fontWeight: 600, color: k.color, letterSpacing: -0.3 }}>{k.value}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 26, fontWeight: 600, color: k.color, letterSpacing: -0.3 }}><CountUp value={k.value} format={k.format} /></div>
           </div>
         ))}
       </div>

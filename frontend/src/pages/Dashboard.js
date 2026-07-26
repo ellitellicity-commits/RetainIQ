@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import CountUp from "../components/CountUp";
+import { cardHoverProps } from "../utils/cardHover";
 import useBreakpoint from "../hooks/useBreakpoint";
 
 const fmtMoney = (v) => "$" + Number(v || 0).toLocaleString();
@@ -59,9 +61,9 @@ export default function Dashboard({ API }) {
   ];
 
   const sideStats = [
-    { label: "Expiring in 90d",    value: stats.expiring_90 || 0,            color: "var(--amber)" },
-    { label: "Critical / expired", value: stats.high_risk_count,             color: "var(--red)" },
-    { label: "Value at risk",      value: fmtBig(stats.total_value_at_risk), color: "var(--cyan)" },
+    { label: "Expiring in 90d",    value: stats.expiring_90 || 0,       format: (v) => Math.round(v).toLocaleString(), color: "var(--amber)" },
+    { label: "Critical / expired", value: stats.high_risk_count,        format: (v) => Math.round(v).toLocaleString(), color: "var(--red)" },
+    { label: "Value at risk",      value: stats.total_value_at_risk,    format: fmtBig, color: "var(--cyan)" },
   ];
 
   return (
@@ -74,10 +76,10 @@ export default function Dashboard({ API }) {
       <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 16, marginBottom: 26, alignItems: "stretch" }}>
         {/* Hero card: total clients + a composition bar of the same critical/at-risk/healthy
             split the filter pills below use, instead of a 4th identical stat box. */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} {...cardHoverProps}
           style={{ flex: isMobile ? "none" : "1 1 40%", background: "var(--card)", border: "1px solid var(--border2)", borderRadius: 14, padding: "22px 24px", boxShadow: "var(--shadow)" }}>
           <div style={{ fontSize: 18, color: "var(--text2)", marginBottom: 12 }}>Total clients</div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 38, fontWeight: 600, color: "var(--text)", letterSpacing: -0.5, marginBottom: 16 }}>{stats.total_customers}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 38, fontWeight: 600, color: "var(--text)", letterSpacing: -0.5, marginBottom: 16 }}><CountUp value={stats.total_customers} /></div>
           <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", background: "var(--hover2)", marginBottom: 8 }}>
             {composition.map(seg => (
               <div key={seg.label} style={{ width: `${(seg.count / compositionTotal) * 100}%`, background: seg.color, transition: "width 0.4s ease" }} />
@@ -95,10 +97,10 @@ export default function Dashboard({ API }) {
 
         <div style={{ flex: isMobile ? "none" : "1 1 60%", display: "flex", flexDirection: isMobile ? "column" : "row", gap: 16 }}>
           {sideStats.map((c, i) => (
-            <motion.div key={c.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: (i + 1) * 0.05 }}
+            <motion.div key={c.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: (i + 1) * 0.05 }} {...cardHoverProps}
               style={{ flex: 1, background: "var(--card)", border: "1px solid var(--border2)", borderRadius: 14, padding: "18px 20px", boxShadow: "var(--shadow)" }}>
               <div style={{ fontSize: 14, color: "var(--text2)", marginBottom: 10 }}>{c.label}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 28, fontWeight: 600, color: c.color, letterSpacing: -0.4 }}>{c.value}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 28, fontWeight: 600, color: c.color, letterSpacing: -0.4 }}><CountUp value={c.value} format={c.format} /></div>
             </motion.div>
           ))}
         </div>
