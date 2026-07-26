@@ -1000,6 +1000,14 @@ body {
    own elements only. */
 [cmdk-item][data-selected="true"] { background: var(--hover2); }
 [cmdk-item][data-selected="true"] .riq-cmdk-kbd { visibility: visible !important; }
+/* Transform-based fill-in for the Dashboard composition bar -- avoids
+   animating `width` directly (layout thrash) by animating scaleX instead,
+   with each segment already laid out at its final width. */
+@keyframes fillBar {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
 [cmdk-group-heading] {
   padding: 8px 20px 4px;
   font-size: 11px;

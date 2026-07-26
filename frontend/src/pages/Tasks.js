@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import TaskList from "../components/TaskList";
 import CountUp from "../components/CountUp";
-import { liftHoverProps } from "../utils/cardHover";
+import { cardHoverProps } from "../utils/cardHover";
 import { TASKS } from "../data/mockData";
 import useBreakpoint from "../hooks/useBreakpoint";
 
@@ -124,10 +124,9 @@ export default function Tasks({ pageAction, clearAction }) {
       {/* Stats Row */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: 14, marginBottom: 22 }}>
         {stats.map(s => (
-          <div key={s.label} {...liftHoverProps} style={{
+          <div key={s.label} {...cardHoverProps} style={{
             display: "flex", alignItems: "center", gap: 14,
-            background: "var(--card)", border: "1px solid var(--border2)",
-            borderLeft: "3px solid " + s.color, borderRadius: "var(--radius)",
+            background: "var(--card)", border: "1px solid var(--border2)", borderRadius: "var(--radius)",
             padding: "14px 18px",
             boxShadow: s.urgent ? `0 0 0 1px color-mix(in srgb, ${s.color} 35%, transparent), var(--shadow)` : "var(--shadow)",
           }}>

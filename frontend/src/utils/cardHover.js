@@ -12,11 +12,3 @@ export const cardHoverProps = {
     gsap.to(e.currentTarget, { y: 0, borderColor: "var(--border2)", duration: 0.22, ease: "power2.out" });
   },
 };
-
-// Lift-only variant for cards whose border already carries semantic meaning
-// (a colored left-accent, a status-colored ring) -- the generic borderColor
-// glow above would flatten that color to brand-indigo on hover instead.
-export const liftHoverProps = {
-  onMouseEnter: (e) => { gsap.to(e.currentTarget, { y: -3, duration: 0.22, ease: "power2.out" }); },
-  onMouseLeave: (e) => { gsap.to(e.currentTarget, { y: 0, duration: 0.22, ease: "power2.out" }); },
-};

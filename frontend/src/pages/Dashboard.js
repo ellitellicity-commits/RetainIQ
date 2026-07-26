@@ -82,7 +82,10 @@ export default function Dashboard({ API }) {
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 38, fontWeight: 600, color: "var(--text)", letterSpacing: -0.5, marginBottom: 16 }}><CountUp value={stats.total_customers} /></div>
           <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", background: "var(--hover2)", marginBottom: 8 }}>
             {composition.map(seg => (
-              <div key={seg.label} style={{ width: `${(seg.count / compositionTotal) * 100}%`, background: seg.color, transition: "width 0.4s ease" }} />
+              <div key={seg.label} style={{
+                width: `${(seg.count / compositionTotal) * 100}%`, background: seg.color,
+                transformOrigin: "left", animation: "fillBar 0.5s ease-out",
+              }} />
             ))}
           </div>
           <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
