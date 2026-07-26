@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { createColumnHelper } from "@tanstack/react-table";
+import DataTable from "../components/DataTable";
 
-const th = { textAlign: "left", padding: "13px 16px", color: "var(--text2)", fontWeight: 500, fontSize: 14, whiteSpace: "nowrap" };
-const td = { padding: "14px 16px", color: "var(--text)", fontSize: 15 };
 const ctrl = { padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--card)", color: "var(--text)", fontFamily: "Inter", fontSize: 14, outline: "none" };
 const pill = { padding: "7px 16px", borderRadius: 999, fontFamily: "Inter", fontSize: 14, fontWeight: 500, cursor: "pointer" };
 
@@ -45,10 +45,49 @@ export default function Contacts({ API }) {
   const activeFilters = search.trim() || company !== "all" || primaryOnly;
   const clearFilters = () => { setSearch(""); setCompany("all"); setPrimaryOnly(false); };
 
+  const columns = useMemo(() => {
+    const ch = createColumnHelper();
+    return [
+      ch.accessor("name", {
+        header: "Name",
+        cell: (info) => (
+          <span style={{ fontWeight: 600 }}>
+            {info.getValue() || "—"}
+            {info.row.original.is_primary ? <span style={{ marginLeft: 8, fontSize: 11, color: "var(--brand-bright)", background: "var(--cyan-dim)", padding: "1px 7px", borderRadius: 5 }}>Primary</span> : null}
+          </span>
+        ),
+        enableSorting: false,
+      }),
+      ch.accessor("title", {
+        header: "Title",
+        cell: (info) => <span style={{ color: "var(--text2)" }}>{info.getValue() || "—"}</span>,
+        enableSorting: false,
+      }),
+      ch.accessor((c) => nameFor(c.client_id), {
+        id: "company",
+        header: "Company",
+        cell: (info) => <span style={{ color: "var(--text2)" }}>{info.getValue()}</span>,
+        enableSorting: false,
+      }),
+      ch.accessor("email", {
+        header: "Email",
+        cell: (info) => info.getValue() ? <a href={"mailto:" + info.getValue()} style={{ color: "var(--cyan)", textDecoration: "none" }}>{info.getValue()}</a> : "—",
+        enableSorting: false,
+        meta: { width: 220 },
+      }),
+      ch.accessor("phone", {
+        header: "Phone",
+        cell: (info) => <span style={{ color: "var(--text2)" }}>{info.getValue() || "—"}</span>,
+        enableSorting: false,
+      }),
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clients]);
+
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontFamily: "Inter", fontSize: 32, fontWeight: 600, color: "var(--text)", letterSpacing: -0.5 }}>Contacts</div>
+        <div style={{ fontFamily: "var(--font-display)", fontSize: 32, fontWeight: 700, color: "var(--text)", letterSpacing: -0.5 }}>Contacts</div>
         <div style={{ color: "var(--text2)", fontSize: 15, marginTop: 6 }}>Everyone you work with across your accounts</div>
       </div>
 
@@ -69,38 +108,7 @@ export default function Contacts({ API }) {
         <div style={{ marginLeft: "auto", fontSize: 14, color: "var(--text3)" }}>{list.length} contacts</div>
       </div>
 
-      <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-        <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", fontFamily: "Inter" }}>
-          <thead>
-            <tr style={{ background: "var(--card)" }}>
-              <th style={th}>Name</th>
-              <th style={th}>Title</th>
-              <th style={th}>Company</th>
-              <th style={th}>Email</th>
-              <th style={th}>Phone</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((c) => (
-              <tr key={c.id} style={{ borderTop: "1px solid var(--border)" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover)")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-                <td style={{ ...td, fontWeight: 600 }}>
-                  {c.name || "—"}
-                  {c.is_primary ? <span style={{ marginLeft: 8, fontSize: 11, color: "var(--brand-bright)", background: "rgba(15,110,86,.22)", padding: "1px 7px", borderRadius: 5 }}>Primary</span> : null}
-                </td>
-                <td style={{ ...td, color: "var(--text2)" }}>{c.title || "—"}</td>
-                <td style={{ ...td, color: "var(--text2)" }}>{nameFor(c.client_id)}</td>
-                <td style={td}>{c.email ? <a href={"mailto:" + c.email} style={{ color: "var(--cyan)", textDecoration: "none" }}>{c.email}</a> : "—"}</td>
-                <td style={{ ...td, color: "var(--text2)" }}>{c.phone || "—"}</td>
-              </tr>
-            ))}
-            {list.length === 0 && (
-              <tr><td colSpan={5} style={{ ...td, textAlign: "center", color: "var(--text3)", padding: "32px" }}>No contacts match your filters.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <DataTable columns={columns} data={list} minWidth={680} emptyMessage="No contacts match your filters." />
     </div>
   );
 }

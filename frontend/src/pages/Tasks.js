@@ -1,7 +1,16 @@
 import React, { useState } from "react";
 import TaskList from "../components/TaskList";
+import CountUp from "../components/CountUp";
+import { cardHoverProps } from "../utils/cardHover";
 import { TASKS } from "../data/mockData";
 import useBreakpoint from "../hooks/useBreakpoint";
+
+const STAT_ICONS = {
+  total: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>),
+  overdue: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>),
+  today: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>),
+  done: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>),
+};
 
 const REPS = ["Priya Sharma", "Marcus Reid", "Aisha Khan", "David Chen"];
 const DEALS = ["RBC Bank", "TD Bank", "Bell Canada", "Sun Life Financial", "Loblaw Companies", "Telus Corporation", "Manulife", "Rogers Communications", "Scotiabank", "CIBC"];
@@ -78,10 +87,10 @@ export default function Tasks({ pageAction, clearAction }) {
   };
 
   const stats = [
-    { label: "Total Tasks", value: tasks.length, color: "var(--text)" },
-    { label: "Overdue", value: overdue.length, color: "var(--red)" },
-    { label: "Due Today", value: dueToday.length, color: "var(--amber)" },
-    { label: "Completed", value: completed.length, color: "var(--green)" },
+    { label: "Total Tasks", value: tasks.length, color: "var(--cyan)", icon: STAT_ICONS.total },
+    { label: "Overdue", value: overdue.length, color: "var(--red)", icon: STAT_ICONS.overdue, urgent: overdue.length > 0 },
+    { label: "Due Today", value: dueToday.length, color: "var(--amber)", icon: STAT_ICONS.today },
+    { label: "Completed", value: completed.length, color: "var(--green)", icon: STAT_ICONS.done },
   ];
 
   const filters = [
@@ -97,7 +106,7 @@ export default function Tasks({ pageAction, clearAction }) {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
-          <div style={{ fontFamily: "Inter", fontSize: 28, fontWeight: 600, color: "var(--text)", letterSpacing: -0.5 }}>Tasks</div>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 700, color: "var(--text)", letterSpacing: -0.5 }}>Tasks</div>
         </div>
         <button onClick={() => setShowForm(true)} style={{
           display: "flex", alignItems: "center", gap: 6,
@@ -115,12 +124,19 @@ export default function Tasks({ pageAction, clearAction }) {
       {/* Stats Row */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: 14, marginBottom: 22 }}>
         {stats.map(s => (
-          <div key={s.label} style={{
+          <div key={s.label} {...cardHoverProps} style={{
+            display: "flex", alignItems: "center", gap: 14,
             background: "var(--card)", border: "1px solid var(--border2)", borderRadius: "var(--radius)",
-            padding: "16px 20px", boxShadow: "var(--shadow)"
+            padding: "14px 18px",
+            boxShadow: s.urgent ? `0 0 0 1px color-mix(in srgb, ${s.color} 35%, transparent), var(--shadow)` : "var(--shadow)",
           }}>
-            <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 6, fontWeight: 500 }}>{s.label}</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: s.color, letterSpacing: -0.5 }}>{s.value}</div>
+            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 34, height: 34, flexShrink: 0, borderRadius: 9, background: `color-mix(in srgb, ${s.color} 14%, transparent)`, color: s.color }}>
+              {s.icon}
+            </span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 3, fontWeight: 500 }}>{s.label}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 600, color: s.color, letterSpacing: -0.3, lineHeight: 1 }}><CountUp value={s.value} /></div>
+            </div>
           </div>
         ))}
       </div>
@@ -132,7 +148,7 @@ export default function Tasks({ pageAction, clearAction }) {
             style={{
               padding: "7px 16px", borderRadius: 999,
               border: "1px solid " + (filter === id ? "var(--cyan)" : "var(--border)"),
-              background: filter === id ? "rgba(0,210,211,0.1)" : "transparent",
+              background: filter === id ? "var(--cyan-dim)" : "transparent",
               color: filter === id ? "var(--cyan)" : "var(--text2)",
               fontFamily: "Inter", fontSize: 13, fontWeight: 500, cursor: "pointer"
             }}>

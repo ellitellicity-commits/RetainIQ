@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -12,9 +12,11 @@
   --hover2:      #dedacf;
   --border:      #ddd8cc;
   --border2:     #ccc7b9;
-  --cyan:        #0f6e56;
-  --cyan-dim:    rgba(15,110,86,0.10);
-  --brand-bright:#0f6e56;
+  /* Brand/interactive accent — deliberately distinct hue from the semantic
+     status colors below, so "primary action" never reads as "healthy". */
+  --cyan:        #3452c4;
+  --cyan-dim:    rgba(52,82,196,0.10);
+  --brand-bright:#3452c4;
   --logo-text:   #2a2a28;
   --amber:       #b8740f;
   --red:         #c0392b;
@@ -28,21 +30,24 @@
   --shadow:      0 1px 3px rgba(0,0,0,0.07);
   --radius:      12px;
   --radius-lg:   16px;
+  --font-body:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', 'IBM Plex Mono', 'Menlo', monospace;
 }
 
 [data-theme="dark"] {
-  --bg:          #30302e;
-  --bg2:         #30302e;
-  --card:        #262624;
-  --card2:       #353532;
-  --sidebar:     #2a2a28;
-  --hover:       #2b2b29;
-  --hover2:      #34342f;
-  --border:      #3a3a36;
-  --border2:     #45433d;
-  --cyan:        #0f6e56;
-  --cyan-dim:    rgba(15,110,86,0.16);
-  --brand-bright:#6FD9B7;
+  --bg:          #302e33;
+  --bg2:         #302e33;
+  --card:        #262428;
+  --card2:       #353238;
+  --sidebar:     #29272c;
+  --hover:       #2b292e;
+  --hover2:      #363339;
+  --border:      #3b3841;
+  --border2:     #47434c;
+  --cyan:        #7c8cf0;
+  --cyan-dim:    rgba(124,140,240,0.16);
+  --brand-bright:#96A3FF;
   --logo-text:   #FAF9F5;
   --amber:       #c29a38;
   --red:         #d94c4c;
@@ -56,6 +61,9 @@
   --shadow:      0 4px 24px rgba(0,0,0,0.4);
   --radius:      12px;
   --radius-lg:   16px;
+  --font-body:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', 'IBM Plex Mono', 'Menlo', monospace;
 }
 
 body {
@@ -984,4 +992,27 @@ body {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* cmdk (CommandPalette) manages its own active-item state via DOM data
+   attributes rather than React state, so it can't be styled with the
+   inline-style pattern used everywhere else -- scoped narrowly to cmdk's
+   own elements only. */
+[cmdk-item][data-selected="true"] { background: var(--hover2); }
+[cmdk-item][data-selected="true"] .riq-cmdk-kbd { visibility: visible !important; }
+/* Transform-based fill-in for the Dashboard composition bar -- avoids
+   animating `width` directly (layout thrash) by animating scaleX instead,
+   with each segment already laid out at its final width. */
+@keyframes fillBar {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+[cmdk-group-heading] {
+  padding: 8px 20px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text3);
 }

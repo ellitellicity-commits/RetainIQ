@@ -177,7 +177,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
           </div>
           <span style={{ fontSize: 14, fontWeight: 600, color: big ? "#97C459" : "var(--text)", flex: "0 0 auto", marginLeft: 8 }}>{fmtK(d.value)}</span>
         </div>
-        <div style={{ marginTop: 9 }}><span style={{ fontSize: 11, color: "var(--brand-bright)", background: "rgba(15,110,86,.22)", padding: "2px 8px", borderRadius: 5 }}>{dealSize(d.value || 0)}</span></div>
+        <div style={{ marginTop: 9 }}><span style={{ fontSize: 11, color: "var(--brand-bright)", background: "var(--cyan-dim)", padding: "2px 8px", borderRadius: 5 }}>{dealSize(d.value || 0)}</span></div>
         {d.next_action ? (
           <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, marginTop: 10, color: overdue ? "#var(--danger-soft)" : "var(--text2)" }}>
             <span>→</span><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.next_action}{d.next_action_date ? " · " + (overdue ? "Overdue" : "Due " + fmtDate(d.next_action_date)) : ""}</span>
@@ -185,7 +185,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
         ) : null}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 11, paddingTop: 10, borderTop: "1px solid var(--border)" }}>
           <span style={{ fontSize: 12, color: "var(--text3)" }}>{d.days_in_stage != null ? d.days_in_stage + "d in stage" : ""}</span>
-          <span title={d.owner || ""} style={{ width: 23, height: 23, borderRadius: "50%", background: "rgba(15,110,86,.28)", color: "var(--brand-bright)", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center" }}>{initials(d.owner)}</span>
+          <span title={d.owner || ""} style={{ width: 23, height: 23, borderRadius: "50%", background: "var(--cyan-dim)", color: "var(--brand-bright)", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center" }}>{initials(d.owner)}</span>
         </div>
         {isMobile && (
           <div onClick={(e) => e.stopPropagation()} style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--border)" }}>
@@ -352,7 +352,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-        <div style={{ fontFamily: "Inter", fontSize: 32, fontWeight: 600, color: "var(--text)", letterSpacing: -0.5 }}>Pipeline</div>
+        <div style={{ fontFamily: "var(--font-display)", fontSize: 32, fontWeight: 700, color: "var(--text)", letterSpacing: -0.5 }}>Pipeline</div>
         <button onClick={openNew} style={{ background: "var(--cyan)", color: "#fff", border: "none", fontFamily: "Inter", fontSize: 14, fontWeight: 600, padding: "9px 16px", borderRadius: 9, cursor: "pointer" }}>+ New deal</button>
       </div>
       <div style={{ color: "var(--text2)", fontSize: 15, marginBottom: 20 }}>{isMobile ? "Tap a deal to open it, or move it to a stage below" : "Drag deals between stages"} · {fmtBig(openValue)} open across pipeline</div>

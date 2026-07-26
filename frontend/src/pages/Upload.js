@@ -68,7 +68,7 @@ export default function Upload({ onUpload, onSkip, API, onCancel }) {
             onDragLeave={() => setDragging(false)}
             onDrop={(e) => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files[0]); }}
             onClick={() => document.getElementById("csv-input").click()}
-            style={{ border: "1.5px dashed " + (dragging ? "var(--cyan)" : "var(--border2)"), background: dragging ? "rgba(15,110,86,0.06)" : "transparent", borderRadius: 14, padding: "32px 20px", textAlign: "center", cursor: "pointer", transition: "border-color .15s, background .15s" }}>
+            style={{ border: "1.5px dashed " + (dragging ? "var(--cyan)" : "var(--border2)"), background: dragging ? "var(--cyan-dim)" : "transparent", borderRadius: 14, padding: "32px 20px", textAlign: "center", cursor: "pointer", transition: "border-color .15s, background .15s" }}>
             <input id="csv-input" type="file" accept=".csv" style={{ display: "none" }} onChange={(e) => handleFile(e.target.files[0])} />
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--brand-bright)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4"/><polyline points="7 9 12 4 17 9"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg>
             <div style={{ fontSize: 14.5, color: "var(--text)", fontWeight: 500, marginTop: 10 }}>Drag &amp; drop your file here</div>

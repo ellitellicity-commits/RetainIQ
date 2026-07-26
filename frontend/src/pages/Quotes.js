@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { createColumnHelper } from "@tanstack/react-table";
+import DataTable from "../components/DataTable";
 
-const th = { textAlign: "left", padding: "13px 16px", color: "var(--text2)", fontWeight: 500, fontSize: 14, whiteSpace: "nowrap" };
-const td = { padding: "14px 16px", color: "var(--text)", fontSize: 15 };
 const ctrl = { padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--card)", color: "var(--text)", fontFamily: "Inter", fontSize: 14, outline: "none" };
 const pill = { padding: "7px 16px", borderRadius: 999, fontFamily: "Inter", fontSize: 14, fontWeight: 500, cursor: "pointer", border: "1px solid var(--border)", background: "transparent", color: "var(--text2)" };
 
@@ -45,10 +45,56 @@ export default function Quotes({ API, onOpenDeal }) {
   const activeFilters = search.trim() || status !== "all";
   const clearFilters = () => { setSearch(""); setStatus("all"); };
 
+  const columns = useMemo(() => {
+    const ch = createColumnHelper();
+    return [
+      ch.accessor("company", {
+        header: "Company",
+        cell: (info) => <span style={{ fontWeight: 600 }}>{info.getValue() || "—"}</span>,
+        enableSorting: false,
+      }),
+      ch.accessor("stage", {
+        header: "Deal stage",
+        cell: (info) => <span style={{ color: "var(--text2)" }}>{info.getValue() || "—"}</span>,
+        enableSorting: false,
+      }),
+      ch.accessor("status", {
+        header: "Status",
+        cell: (info) => {
+          const s = STATUS[info.getValue()] || STATUS.draft;
+          return <span style={{ background: s.bg, color: s.fg, fontSize: 12, fontWeight: 600, padding: "2px 10px", borderRadius: 6, whiteSpace: "nowrap" }}>{s.t}</span>;
+        },
+        enableSorting: false,
+      }),
+      ch.accessor("total", {
+        header: "Total",
+        cell: (info) => <span style={{ fontWeight: 600 }}>{money(info.getValue())}</span>,
+        enableSorting: false,
+      }),
+      ch.accessor("discount", {
+        header: "Discount",
+        cell: (info) => <span style={{ color: "var(--text2)" }}>{info.getValue() ? `${info.getValue()}%` : "—"}</span>,
+        enableSorting: false,
+      }),
+      ch.accessor("sent_at", {
+        header: "Sent",
+        cell: (info) => <span style={{ color: "var(--text2)", whiteSpace: "nowrap" }}>{fmtDate(info.getValue())}</span>,
+        enableSorting: false,
+        meta: { width: 120 },
+      }),
+      ch.accessor("owner", {
+        header: "Owner",
+        cell: (info) => <span style={{ color: "var(--text2)" }}>{info.getValue() || "—"}</span>,
+        enableSorting: false,
+      }),
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontFamily: "Inter", fontSize: 32, fontWeight: 600, color: "var(--text)", letterSpacing: -0.5 }}>Quotes</div>
+        <div style={{ fontFamily: "var(--font-display)", fontSize: 32, fontWeight: 700, color: "var(--text)", letterSpacing: -0.5 }}>Quotes</div>
         <div style={{ color: "var(--text2)", fontSize: 15, marginTop: 6 }}>Every quote raised across your deals, in one place</div>
       </div>
 
@@ -69,48 +115,7 @@ export default function Quotes({ API, onOpenDeal }) {
         </div>
       </div>
 
-      <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-        <table style={{ width: "100%", minWidth: 760, borderCollapse: "collapse", fontFamily: "Inter" }}>
-          <thead>
-            <tr style={{ background: "var(--card)" }}>
-              <th style={th}>Company</th>
-              <th style={th}>Deal stage</th>
-              <th style={th}>Status</th>
-              <th style={th}>Total</th>
-              <th style={th}>Discount</th>
-              <th style={th}>Sent</th>
-              <th style={th}>Owner</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((q) => {
-              const s = STATUS[q.status] || STATUS.draft;
-              return (
-                <tr key={q.deal_id} onClick={() => onOpenDeal && onOpenDeal(q.deal_id)}
-                  style={{ borderTop: "1px solid var(--border)", cursor: onOpenDeal ? "pointer" : "default" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-                  <td style={{ ...td, fontWeight: 600 }}>{q.company || "—"}</td>
-                  <td style={{ ...td, color: "var(--text2)" }}>{q.stage || "—"}</td>
-                  <td style={td}>
-                    <span style={{ background: s.bg, color: s.fg, fontSize: 12, fontWeight: 600, padding: "2px 10px", borderRadius: 6 }}>{s.t}</span>
-                  </td>
-                  <td style={{ ...td, fontWeight: 600 }}>{money(q.total)}</td>
-                  <td style={{ ...td, color: "var(--text2)" }}>{q.discount ? `${q.discount}%` : "—"}</td>
-                  <td style={{ ...td, color: "var(--text2)" }}>{fmtDate(q.sent_at)}</td>
-                  <td style={{ ...td, color: "var(--text2)" }}>{q.owner || "—"}</td>
-                </tr>
-              );
-            })}
-            {!loading && list.length === 0 && (
-              <tr><td colSpan={7} style={{ ...td, textAlign: "center", color: "var(--text3)", padding: "32px" }}>No quotes match your filters.</td></tr>
-            )}
-            {loading && (
-              <tr><td colSpan={7} style={{ ...td, textAlign: "center", color: "var(--text3)", padding: "32px" }}>Loading…</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <DataTable columns={columns} data={list} onRowClick={onOpenDeal ? (q) => onOpenDeal(q.deal_id) : undefined} loading={loading} minWidth={800} emptyMessage="No quotes match your filters." />
     </div>
   );
 }

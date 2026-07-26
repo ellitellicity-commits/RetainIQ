@@ -11,10 +11,10 @@ import CopilotPage from "./pages/CopilotPage";
 import Tasks from "./pages/Tasks";
 import EmailSequences from "./pages/EmailSequences";
 import Automations from "./pages/Automations";
-import AICopilotPanel from "./components/AICopilotPanel";
 import CommandPalette from "./components/CommandPalette";
 import NotificationCenter from "./components/NotificationCenter";
 import ChatWidget from "./components/ChatWidget";
+import PageTransition from "./components/PageTransition";
 import useBreakpoint from "./hooks/useBreakpoint";
 import "./App.css";
 
@@ -49,7 +49,6 @@ export default function App() {
   const [theme, setTheme] = useState(() => {
     try { return localStorage.getItem("riq_theme") || document.body.dataset.theme || "dark"; } catch (e) { return "dark"; }
   });
-  const [copilotOpen, setCopilotOpen] = useState(false);
   const [cmdKOpen, setCmdKOpen] = useState(false);
   const [pageAction, setPageAction] = useState(null);
   const [openDealId, setOpenDealId] = useState(null);
@@ -86,7 +85,7 @@ export default function App() {
           setPageAction("new-note");
           break;
         case "copilot":
-          setCopilotOpen(true);
+          setPage("copilot");
           break;
         case "search-deals":
           setPage("journey");
@@ -158,7 +157,7 @@ export default function App() {
         title={expanded ? "" : tab.label} aria-label={tab.label}
         style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: expanded ? "flex-start" : "center",
           padding: expanded ? "10px 12px" : "10px 0", borderRadius: 9, border: "none", cursor: "pointer",
-          background: active ? "rgba(15,110,86,0.18)" : "transparent",
+          background: active ? "var(--cyan-dim)" : "transparent",
           color: active ? "var(--brand-bright)" : "var(--text2)", fontFamily: "Inter", fontSize: 14.5, fontWeight: 500,
           whiteSpace: "nowrap", width: "100%", textAlign: "left", transition: "background .12s" }}
         onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = "var(--hover2)"; }}
@@ -292,28 +291,22 @@ export default function App() {
       <main style={{ flex: 1, minWidth: 0, height: "100%", overflowY: "auto", padding: isMobile ? "16px 16px 28px" : "28px 34px", position: "relative", paddingTop: isMobile ? 4 : 16 }}>
         <div style={{ position: "sticky", top: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, zIndex: 10, paddingBottom: 8 }}>
           <NotificationCenter API={API} />
-          <button onClick={() => setCopilotOpen(o => !o)}
-            style={{ background: copilotOpen ? "var(--cyan)" : "transparent", border: "1px solid var(--border2)", color: copilotOpen ? "#fff" : "var(--text2)", cursor: "pointer", padding: "6px 12px", borderRadius: 8, display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 500 }}
-            onMouseEnter={e => { if (!copilotOpen) e.currentTarget.style.background = "var(--hover2)"; }}
-            onMouseLeave={e => { if (!copilotOpen) e.currentTarget.style.background = "transparent"; }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L9 9l-7 1 5 5-1.5 7L12 18.5l6.5 3.5L17 15l5-5-7-1z"/></svg>
-            AI
-          </button>
         </div>
 
-        {page === "dashboard" && <Dashboard API={API} />}
-        {page === "customers" && <Customers API={API} pageAction={pageAction} clearAction={() => setPageAction(null)} />}
-        {page === "contacts"  && <Contacts API={API} />}
-        {page === "journey"   && <Journey API={API} pageAction={pageAction} clearAction={() => setPageAction(null)} openDealId={openDealId} clearOpenDeal={() => setOpenDealId(null)} />}
-        {page === "quotes"    && <Quotes API={API} onOpenDeal={openDealInPipeline} />}
-        {page === "alerts"    && <Alerts API={API} />}
-        {page === "copilot"   && <CopilotPage />}
-        {page === "tasks"     && <Tasks pageAction={pageAction} clearAction={() => setPageAction(null)} />}
-        {page === "sequences" && <EmailSequences />}
-        {page === "automations" && <Automations />}
+        <PageTransition pageKey={page}>
+          {page === "dashboard" && <Dashboard API={API} />}
+          {page === "customers" && <Customers API={API} pageAction={pageAction} clearAction={() => setPageAction(null)} />}
+          {page === "contacts"  && <Contacts API={API} />}
+          {page === "journey"   && <Journey API={API} pageAction={pageAction} clearAction={() => setPageAction(null)} openDealId={openDealId} clearOpenDeal={() => setOpenDealId(null)} />}
+          {page === "quotes"    && <Quotes API={API} onOpenDeal={openDealInPipeline} />}
+          {page === "alerts"    && <Alerts API={API} />}
+          {page === "copilot"   && <CopilotPage API={API} onOpenDeal={openDealInPipeline} />}
+          {page === "tasks"     && <Tasks pageAction={pageAction} clearAction={() => setPageAction(null)} />}
+          {page === "sequences" && <EmailSequences />}
+          {page === "automations" && <Automations />}
+        </PageTransition>
       </main>
 
-      <AICopilotPanel open={copilotOpen} onClose={() => setCopilotOpen(false)} />
       <CommandPalette open={cmdKOpen} onClose={() => setCmdKOpen(false)} onNavigate={handleCmdNavigate} />
       <ChatWidget API={API} />
     </div>

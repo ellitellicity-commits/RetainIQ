@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import CountUp from "../components/CountUp";
+import { cardHoverProps } from "../utils/cardHover";
 import { EMAIL_SEQUENCES } from "../data/mockData";
 import useBreakpoint from "../hooks/useBreakpoint";
 
@@ -54,7 +56,6 @@ export default function EmailSequences() {
   const stats = [
     { label: "Active Sequences", value: activeSequences.length, color: "var(--green)" },
     { label: "Total Enrolled", value: totalEnrolled, color: "var(--blue)" },
-    { label: "Avg Reply Rate", value: avgReplyRate + "%", color: "var(--cyan)" },
   ];
 
   const stepStatusColor = (status) => {
@@ -90,7 +91,7 @@ export default function EmailSequences() {
       <span style={{
         display: "inline-flex", alignItems: "center", gap: 5,
         padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 600,
-        background: isActive ? "rgba(34,197,94,0.12)" : "rgba(245,158,11,0.12)",
+        background: isActive ? "color-mix(in srgb, var(--green) 14%, transparent)" : "color-mix(in srgb, var(--amber) 14%, transparent)",
         color: isActive ? "var(--green)" : "var(--amber)",
         textTransform: "capitalize"
       }}>
@@ -104,7 +105,7 @@ export default function EmailSequences() {
     <div>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-        <div style={{ fontFamily: "Inter", fontSize: 28, fontWeight: 600, color: "var(--text)", letterSpacing: -0.5 }}>
+        <div style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 700, color: "var(--text)", letterSpacing: -0.5 }}>
           Email Sequences
         </div>
         <button onClick={() => setShowForm(true)} style={{
@@ -120,17 +121,33 @@ export default function EmailSequences() {
         </button>
       </div>
 
-      {/* Stats Row */}
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 14, marginBottom: 26 }}>
-        {stats.map(s => (
-          <div key={s.label} style={{
-            background: "var(--card)", border: "1px solid var(--border2)", borderRadius: "var(--radius)",
-            padding: "16px 20px", boxShadow: "var(--shadow)"
-          }}>
-            <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 6, fontWeight: 500 }}>{s.label}</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: s.color, letterSpacing: -0.5 }}>{s.value}</div>
-          </div>
+      {/* Stats Strip -- one instrument cluster instead of three separate cards, echoing
+          the circular step-tracker motif below with a reply-rate ring. */}
+      <div {...cardHoverProps} style={{
+        display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "stretch" : "center",
+        background: "var(--card)", border: "1px solid var(--border2)", borderRadius: "var(--radius)",
+        padding: isMobile ? "18px 20px" : "10px 8px", boxShadow: "var(--shadow)", marginBottom: 26, gap: isMobile ? 16 : 0,
+      }}>
+        {stats.slice(0, 2).map((s, i) => (
+          <React.Fragment key={s.label}>
+            <div style={{ flex: 1, padding: isMobile ? 0 : "10px 22px" }}>
+              <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 6, fontWeight: 500 }}>{s.label}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 26, fontWeight: 600, color: s.color, letterSpacing: -0.3 }}><CountUp value={s.value} /></div>
+            </div>
+            {!isMobile && <div style={{ width: 1, alignSelf: "stretch", background: "var(--border)" }} />}
+          </React.Fragment>
         ))}
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 14, padding: isMobile ? 0 : "10px 22px" }}>
+          <svg width="46" height="46" viewBox="0 0 46 46" style={{ flexShrink: 0, transform: "rotate(-90deg)" }}>
+            <circle cx="23" cy="23" r="19" fill="none" stroke="var(--border)" strokeWidth="5" />
+            <circle cx="23" cy="23" r="19" fill="none" stroke="var(--cyan)" strokeWidth="5" strokeLinecap="round"
+              strokeDasharray={`${(avgReplyRate / 100) * 2 * Math.PI * 19} ${2 * Math.PI * 19}`} />
+          </svg>
+          <div>
+            <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 4, fontWeight: 500 }}>Avg Reply Rate</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 600, color: "var(--cyan)", letterSpacing: -0.3 }}><CountUp value={avgReplyRate} format={(v) => Math.round(v) + "%"} /></div>
+          </div>
+        </div>
       </div>
 
       {/* Sequence Cards */}

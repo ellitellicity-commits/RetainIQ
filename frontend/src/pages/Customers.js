@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
+import { createColumnHelper } from "@tanstack/react-table";
 import ActivityTimeline from "../components/ActivityTimeline";
 import NoteEditor from "../components/NoteEditor";
+import DataTable from "../components/DataTable";
 import { NOTES } from "../data/mockData";
 import useBreakpoint from "../hooks/useBreakpoint";
 
@@ -26,9 +28,6 @@ const QUOTE_STATUS = {
   sent:  { bg: "#d7e9e1", fg: "#1b6a58", t: "Sent" },
   draft: { bg: "#efe4c4", fg: "#7d6217", t: "Draft" },
 };
-
-const th = { textAlign: "left", padding: "13px 16px", color: "var(--text2)", fontWeight: 500, fontSize: 14, whiteSpace: "nowrap" };
-const td = { padding: "14px 16px", color: "var(--text)", fontSize: 15 };
 
 const ctrl = {
   padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border)",
@@ -460,7 +459,7 @@ export default function Clients({ API, pageAction, clearAction }) {
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 14.5, fontWeight: 600, color: "var(--text)" }}>
                         {ct.name}
-                        {ct.is_primary ? <span style={{ marginLeft: 8, fontSize: 11, color: "var(--brand-bright)", background: "rgba(15,110,86,.22)", padding: "1px 7px", borderRadius: 5 }}>Primary</span> : null}
+                        {ct.is_primary ? <span style={{ marginLeft: 8, fontSize: 11, color: "var(--brand-bright)", background: "var(--cyan-dim)", padding: "1px 7px", borderRadius: 5 }}>Primary</span> : null}
                       </div>
                       {ct.title ? <div style={{ fontSize: 13, color: "var(--text2)", marginTop: 2 }}>{ct.title}</div> : null}
                       {ct.email ? <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 2 }}>{ct.email}</div> : null}
@@ -564,10 +563,62 @@ export default function Clients({ API, pageAction, clearAction }) {
     document.body
   ) : null;
 
+  const columns = useMemo(() => {
+    const ch = createColumnHelper();
+    return [
+      ch.accessor((c) => nameOf(c), {
+        id: "client",
+        header: "Client",
+        cell: (info) => <span style={{ fontWeight: 600 }}>{info.getValue()}</span>,
+        enableSorting: false,
+      }),
+      ch.accessor("software", {
+        header: "Software",
+        cell: (info) => (
+          <span style={{ color: "var(--text2)" }}>
+            {info.getValue() || "—"}
+            {info.row.original.vendor ? <div style={{ fontSize: 12.5, color: "var(--text3)" }}>{info.row.original.vendor}</div> : null}
+          </span>
+        ),
+        enableSorting: false,
+      }),
+      ch.accessor("contract_value", {
+        header: "Value",
+        cell: (info) => fmtMoney(info.getValue()),
+        meta: { align: "right" },
+        enableSorting: false,
+      }),
+      ch.accessor("contract_expiry", {
+        header: "Renews",
+        cell: (info) => (
+          <span style={{ color: "var(--text2)" }}>
+            {info.row.original.days_until_expiry < 0 ? "Expired" : fmtDate(info.getValue())}
+          </span>
+        ),
+        enableSorting: false,
+      }),
+      ch.accessor("account_manager", {
+        header: "Owner",
+        cell: (info) => <span style={{ color: "var(--text2)" }}>{info.getValue() || "—"}</span>,
+        enableSorting: false,
+      }),
+      ch.accessor((c) => statusOf(c.journey_stage), {
+        id: "status",
+        header: "Status",
+        cell: (info) => {
+          const s = info.getValue();
+          return <span style={{ background: s.bg, color: s.fg, fontSize: 13, padding: "3px 12px", borderRadius: 6, fontWeight: 500, whiteSpace: "nowrap" }}>{s.label}</span>;
+        },
+        enableSorting: false,
+      }),
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontFamily: "Inter", fontSize: 32, fontWeight: 600, color: "var(--text)", letterSpacing: -0.5 }}>Clients</div>
+        <div style={{ fontFamily: "var(--font-display)", fontSize: 32, fontWeight: 700, color: "var(--text)", letterSpacing: -0.5 }}>Clients</div>
         <div style={{ color: "var(--text2)", fontSize: 15, marginTop: 6 }}>Manage accounts &amp; renewals · Digital Move IT &amp; Telecom</div>
       </div>
 
@@ -616,44 +667,7 @@ export default function Clients({ API, pageAction, clearAction }) {
         <div style={{ marginLeft: "auto", fontSize: 14, color: "var(--text3)" }}>{list.length} clients</div>
       </div>
 
-      <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-        <table style={{ width: "100%", minWidth: 720, borderCollapse: "collapse", fontFamily: "Inter" }}>
-          <thead>
-            <tr style={{ background: "var(--card)" }}>
-              <th style={th}>Client</th>
-              <th style={th}>Software</th>
-              <th style={{ ...th, textAlign: "right" }}>Value</th>
-              <th style={th}>Renews</th>
-              <th style={th}>Owner</th>
-              <th style={th}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((c) => {
-              const s = statusOf(c.journey_stage);
-              return (
-                <tr key={c.id} onClick={() => openClient(c)}
-                  style={{ borderTop: "1px solid var(--border)", cursor: "pointer" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-                  <td style={{ ...td, fontWeight: 600 }}>{nameOf(c)}</td>
-                  <td style={{ ...td, color: "var(--text2)" }}>
-                    {c.software || "—"}
-                    {c.vendor ? <div style={{ fontSize: 12.5, color: "var(--text3)" }}>{c.vendor}</div> : null}
-                  </td>
-                  <td style={{ ...td, textAlign: "right" }}>{fmtMoney(c.contract_value)}</td>
-                  <td style={{ ...td, color: "var(--text2)" }}>{c.days_until_expiry < 0 ? "Expired" : fmtDate(c.contract_expiry)}</td>
-                  <td style={{ ...td, color: "var(--text2)" }}>{c.account_manager || "—"}</td>
-                  <td style={td}><span style={{ background: s.bg, color: s.fg, fontSize: 13, padding: "3px 12px", borderRadius: 6, fontWeight: 500 }}>{s.label}</span></td>
-                </tr>
-              );
-            })}
-            {list.length === 0 && (
-              <tr><td colSpan={6} style={{ ...td, textAlign: "center", color: "var(--text3)", padding: "32px" }}>No clients match your filters.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <DataTable columns={columns} data={list} onRowClick={openClient} minWidth={760} emptyMessage="No clients match your filters." />
 
       {drawer}
     </div>
