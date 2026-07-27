@@ -140,10 +140,24 @@ export default function Login({ API, onAuthenticated }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${API}/api/auth/config`)
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((data) => { if (!cancelled) setGuestModeEnabled(!!data.guestModeEnabled); })
-      .catch(() => {});
+    // A single failed attempt used to hide Guest Mode for the rest of the
+    // session with no way to recover short of a full reload -- exactly what
+    // a cold-started backend (a free-tier host can take 30-60s to wake up)
+    // or a flaky mobile connection triggers on first load. Keep retrying on
+    // a fixed interval for up to a minute, long enough to ride out a real
+    // cold start, rather than giving up after a couple of quick attempts.
+    const MAX_ATTEMPTS = 15;
+    const RETRY_INTERVAL_MS = 4000;
+    const loadConfig = (attempt = 0) => {
+      fetch(`${API}/api/auth/config`)
+        .then((res) => (res.ok ? res.json() : Promise.reject()))
+        .then((data) => { if (!cancelled) setGuestModeEnabled(!!data.guestModeEnabled); })
+        .catch(() => {
+          if (cancelled || attempt >= MAX_ATTEMPTS) return;
+          setTimeout(() => loadConfig(attempt + 1), RETRY_INTERVAL_MS);
+        });
+    };
+    loadConfig();
     return () => { cancelled = true; };
   }, [API]);
 
