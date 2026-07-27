@@ -38,7 +38,7 @@ const cfield = { width: "100%", padding: "8px 11px", borderRadius: 8, border: "1
 const iconBtn = { background: "transparent", border: "1px solid var(--border2)", color: "var(--text3)", fontFamily: "Inter", fontSize: 12.5, padding: "4px 10px", borderRadius: 7, cursor: "pointer" };
 const iconBtnMobile = { ...iconBtn, padding: "9px 12px", minHeight: 36 };
 
-export default function Clients({ API, pageAction, clearAction }) {
+export default function Clients({ API, pageAction, clearAction, isGuest }) {
   const { isMobile } = useBreakpoint();
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState("");
@@ -196,7 +196,7 @@ export default function Clients({ API, pageAction, clearAction }) {
   const openLogForm = (type) => setLogForm({ type, notes: "", date: new Date().toISOString().slice(0, 10) });
 
   const saveLog = () => {
-    if (!logForm || !selected) return;
+    if (isGuest || !logForm || !selected) return;
     setLogSaving(true);
     fetch(`${API}/api/db/activities`, {
       method: "POST",
@@ -216,7 +216,7 @@ export default function Clients({ API, pageAction, clearAction }) {
   };
 
   const logEmailDrafted = () => {
-    if (!selected || !email) return;
+    if (isGuest || !selected || !email) return;
     fetch(`${API}/api/db/activities`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -235,7 +235,7 @@ export default function Clients({ API, pageAction, clearAction }) {
   const openEditContact = (ct) => setContactForm({ id: ct.id, name: ct.name || "", title: ct.title || "", email: ct.email || "", phone: ct.phone || "", is_primary: !!ct.is_primary });
 
   const saveContact = () => {
-    if (!contactForm || !selected) return;
+    if (isGuest || !contactForm || !selected) return;
     if (!(contactForm.name || "").trim()) return;
     setContactSaving(true);
     const isEdit = !!contactForm.id;
@@ -253,7 +253,7 @@ export default function Clients({ API, pageAction, clearAction }) {
   };
 
   const deleteContact = (id, name) => {
-    if (!selected) return;
+    if (isGuest || !selected) return;
     if (!window.confirm(`Delete ${name || "this contact"}? This can't be undone.`)) return;
     fetch(`${API}/api/db/contacts/${id}`, { method: "DELETE" })
       .then(() => loadContacts(selected.id))
@@ -359,10 +359,10 @@ export default function Clients({ API, pageAction, clearAction }) {
           {drawerTab === "activity" && (
             <div style={{ marginTop: 18 }}>
               <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-                <button onClick={() => openLogForm("call")}
-                  style={{ background: "transparent", border: "1px solid var(--border2)", color: "var(--cyan)", fontFamily: "Inter", fontSize: 13, fontWeight: 600, padding: "5px 12px", borderRadius: 8, cursor: "pointer" }}>+ Log a call</button>
-                <button onClick={() => openLogForm("meeting")}
-                  style={{ background: "transparent", border: "1px solid var(--border2)", color: "var(--cyan)", fontFamily: "Inter", fontSize: 13, fontWeight: 600, padding: "5px 12px", borderRadius: 8, cursor: "pointer" }}>+ Log a meeting</button>
+                <button onClick={() => openLogForm("call")} disabled={isGuest} title={isGuest ? "Guest accounts are read-only" : ""}
+                  style={{ background: "transparent", border: "1px solid var(--border2)", color: "var(--cyan)", fontFamily: "Inter", fontSize: 13, fontWeight: 600, padding: "5px 12px", borderRadius: 8, cursor: isGuest ? "not-allowed" : "pointer", opacity: isGuest ? 0.5 : 1 }}>+ Log a call</button>
+                <button onClick={() => openLogForm("meeting")} disabled={isGuest} title={isGuest ? "Guest accounts are read-only" : ""}
+                  style={{ background: "transparent", border: "1px solid var(--border2)", color: "var(--cyan)", fontFamily: "Inter", fontSize: 13, fontWeight: 600, padding: "5px 12px", borderRadius: 8, cursor: isGuest ? "not-allowed" : "pointer", opacity: isGuest ? 0.5 : 1 }}>+ Log a meeting</button>
               </div>
 
               {logForm && (
@@ -438,7 +438,7 @@ export default function Clients({ API, pageAction, clearAction }) {
           <div style={{ marginTop: 6 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
               <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)" }}>Contacts</div>
-              {!contactForm && (
+              {!contactForm && !isGuest && (
                 <button onClick={openAddContact}
                   style={{ background: "transparent", border: "1px solid var(--border2)", color: "var(--cyan)", fontFamily: "Inter", fontSize: 13, fontWeight: 600, padding: "5px 12px", borderRadius: 8, cursor: "pointer" }}>+ Add contact</button>
               )}
@@ -466,8 +466,8 @@ export default function Clients({ API, pageAction, clearAction }) {
                       {ct.phone ? <div style={{ fontSize: 13, color: "var(--text3)", marginTop: 2 }}>{ct.phone}</div> : null}
                     </div>
                     <div style={{ display: "flex", gap: 6, flex: "0 0 auto", marginLeft: 8 }}>
-                      <button onClick={() => openEditContact(ct)} style={isMobile ? iconBtnMobile : iconBtn}>Edit</button>
-                      <button onClick={() => deleteContact(ct.id, ct.name)} style={isMobile ? iconBtnMobile : iconBtn}>Delete</button>
+                      {!isGuest && <button onClick={() => openEditContact(ct)} style={isMobile ? iconBtnMobile : iconBtn}>Edit</button>}
+                      {!isGuest && <button onClick={() => deleteContact(ct.id, ct.name)} style={isMobile ? iconBtnMobile : iconBtn}>Delete</button>}
                     </div>
                   </div>
                 </div>

@@ -39,7 +39,7 @@ function Spinner() {
   );
 }
 
-function ActionProposalCard({ msg, onConfirm, onCancel }) {
+function ActionProposalCard({ msg, onConfirm, onCancel, isGuest }) {
   return (
     <div
       style={{
@@ -58,7 +58,10 @@ function ActionProposalCard({ msg, onConfirm, onCancel }) {
         {msg.summary}
       </div>
 
-      {msg.status === "pending" && (
+      {msg.status === "pending" && isGuest && (
+        <div style={{ fontSize: 12, color: "var(--text3)" }}>Guest accounts are read-only — this action can't be confirmed.</div>
+      )}
+      {msg.status === "pending" && !isGuest && (
         <div style={{ display: "flex", gap: 8 }}>
           <button
             onClick={() => onConfirm()}
@@ -102,7 +105,7 @@ function ActionProposalCard({ msg, onConfirm, onCancel }) {
   );
 }
 
-export default function ChatWidget({ API }) {
+export default function ChatWidget({ API, isGuest }) {
   const { isMobile } = useBreakpoint();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -164,6 +167,7 @@ export default function ChatWidget({ API }) {
   };
 
   const confirmAction = async (index) => {
+    if (isGuest) return;
     const target = messages[index];
     setMessages((m) => m.map((mm, i) => (i === index ? { ...mm, status: "confirming" } : mm)));
     try {
@@ -301,7 +305,7 @@ export default function ChatWidget({ API }) {
                     {m.content}
                   </div>
                 ) : m.kind === "action_proposal" ? (
-                  <ActionProposalCard key={i} msg={m} onConfirm={() => confirmAction(i)} onCancel={() => cancelAction(i)} />
+                  <ActionProposalCard key={i} msg={m} onConfirm={() => confirmAction(i)} onCancel={() => cancelAction(i)} isGuest={isGuest} />
                 ) : (
                   <div
                     key={i}

@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 import sqlite3, os
 from datetime import datetime
 from activities_api import log_activity
+from auth_api import block_guest
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "retainiq.db")
@@ -80,6 +81,7 @@ def get_quote(deal_id):
 
 
 @quotes_bp.route("/api/db/quote/<int:deal_id>", methods=["PUT"])
+@block_guest
 def save_quote(deal_id):
     data = request.get_json(force=True) or {}
     items = data.get("items", []) or []
@@ -139,6 +141,7 @@ def save_quote(deal_id):
 
 
 @quotes_bp.route("/api/db/quote/<int:deal_id>/send", methods=["POST"])
+@block_guest
 def send_quote(deal_id):
     conn = get_conn()
     c = conn.cursor()

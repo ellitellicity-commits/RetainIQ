@@ -1,152 +1,401 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useRef, useEffect } from "react";
+import gsap from "gsap";
+import useBreakpoint from "../hooks/useBreakpoint";
 
-export default function Login({ onLogin }) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-  const handleLogin = () => {
-    setLoading(true);
-    setError("");
-    setTimeout(() => {
-      if (username === "digitalmove" && password === "retainiq2026") {
-        onLogin();
-      } else {
-        setError("Invalid username or password");
-        setLoading(false);
-      }
-    }, 800);
+const EyeIcon = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const EyeOffIcon = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17.9 17.9A10.6 10.6 0 0 1 12 19.5C5 19.5 1.5 12 1.5 12a18.6 18.6 0 0 1 4.6-5.6M9.9 5.2A9.7 9.7 0 0 1 12 5c7 0 10.5 7 10.5 7a18.5 18.5 0 0 1-2.3 3.4" />
+    <path d="M9.9 14.1A3 3 0 0 0 14 10" />
+    <line x1="2" y1="2" x2="22" y2="22" />
+  </svg>
+);
+
+// The product's own recurring "pulsing live-status dot" motif (see the
+// header's live-pill), reused here as the login page's one distinctive
+// touch instead of introducing an unrelated illustration.
+function SignalMoment() {
+  const pathRef = useRef(null);
+
+  useEffect(() => {
+    const path = pathRef.current;
+    if (!path) return;
+    const length = path.getTotalLength();
+    gsap.set(path, { strokeDasharray: length, strokeDashoffset: length });
+    gsap.to(path, { strokeDashoffset: 0, duration: 1.6, ease: "power2.out", delay: 0.35 });
+  }, []);
+
+  return (
+    <svg width="100%" height="140" viewBox="0 0 320 140" fill="none" style={{ overflow: "visible" }} aria-hidden="true">
+      <line x1="0" y1="104" x2="320" y2="104" stroke="var(--border)" strokeWidth="1" />
+      <path
+        ref={pathRef}
+        d="M4 60 C 60 60, 80 118, 130 118 S 210 30, 260 30 S 300 46, 316 44"
+        stroke="var(--brand-bright)"
+        strokeWidth="3"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <circle cx="316" cy="44" r="5" fill="var(--brand-bright)" style={{ animation: "pulse-dot 2s infinite" }} />
+    </svg>
+  );
+}
+
+function FieldError({ children }) {
+  if (!children) return null;
+  return (
+    <div role="alert" style={{ color: "var(--danger-soft)", fontFamily: "var(--font-body)", fontSize: 12, marginTop: 6, lineHeight: 1.4 }}>
+      {children}
+    </div>
+  );
+}
+
+const labelStyle = {
+  fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 700, color: "var(--text3)",
+  letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8, display: "block",
+};
+
+function fieldStyle(hasError) {
+  return {
+    width: "100%", background: "var(--bg)", border: `1px solid ${hasError ? "var(--danger-soft)" : "var(--border2)"}`,
+    borderRadius: 8, padding: "11px 14px", fontFamily: "var(--font-body)", fontSize: 14,
+    color: "var(--text)", outline: "none", boxSizing: "border-box", transition: "border-color 0.15s ease",
   };
+}
+
+export default function Login({ API, onAuthenticated }) {
+  const { isDesktop, isTablet } = useBreakpoint();
+  const showIllustration = isDesktop || isTablet;
+
+  const [mode, setMode] = useState("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [touched, setTouched] = useState({});
+  const [formError, setFormError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [showForgotNote, setShowForgotNote] = useState(false);
+  const [guestModeEnabled, setGuestModeEnabled] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
+  const [guestError, setGuestError] = useState("");
+
+  const btnRef = useRef(null);
+  const btnLabelRef = useRef(null);
+  const btnSpinnerRef = useRef(null);
+  // A ref, not just the `submitting` state, so a second click that lands
+  // before React commits the state update still sees the lock -- state
+  // alone isn't synchronous enough to stop a fast double-click.
+  const inFlightRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API}/api/auth/config`)
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => { if (!cancelled) setGuestModeEnabled(!!data.guestModeEnabled); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [API]);
+
+  const touch = (field) => setTouched((t) => ({ ...t, [field]: true }));
+
+  const emailError = touched.email && !email ? "Email is required"
+    : touched.email && !EMAIL_RE.test(email) ? "Enter a valid email address" : "";
+  const passwordError = touched.password && !password ? "Password is required"
+    : touched.password && password.length < 8 ? "Must be at least 8 characters" : "";
+  const confirmError = mode === "signup" && touched.confirmPassword && confirmPassword !== password
+    ? "Passwords don't match" : "";
+
+  const emailValid = EMAIL_RE.test(email);
+  const passwordValid = password.length >= 8;
+  const canSubmit = emailValid && passwordValid && (mode === "login" || confirmPassword === password);
+
+  const setButtonLoading = (loading) => {
+    if (!btnRef.current) return;
+    const tl = gsap.timeline();
+    if (loading) {
+      tl.to(btnLabelRef.current, { opacity: 0, y: -8, duration: 0.16, ease: "power1.in" })
+        .set(btnLabelRef.current, { visibility: "hidden" })
+        .set(btnSpinnerRef.current, { visibility: "visible" })
+        .fromTo(btnSpinnerRef.current, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: "power1.out" });
+    } else {
+      tl.to(btnSpinnerRef.current, { opacity: 0, y: -8, duration: 0.14, ease: "power1.in" })
+        .set(btnSpinnerRef.current, { visibility: "hidden" })
+        .set(btnLabelRef.current, { visibility: "visible" })
+        .fromTo(btnLabelRef.current, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: "power1.out" });
+    }
+  };
+
+  const shakeButton = () => {
+    if (!btnRef.current) return;
+    gsap.fromTo(
+      btnRef.current,
+      { x: -5 },
+      { x: 0, duration: 0.32, ease: "power2.out", clearProps: "x", repeat: 3, yoyo: true, repeatRefresh: false }
+    );
+  };
+
+  const switchMode = (next) => {
+    setMode(next);
+    setFormError("");
+    setTouched({});
+    setConfirmPassword("");
+    setShowForgotNote(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setTouched({ email: true, password: true, confirmPassword: true });
+    setFormError("");
+    if (!canSubmit || inFlightRef.current) return;
+
+    inFlightRef.current = true;
+    setSubmitting(true);
+    setButtonLoading(true);
+    try {
+      const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/signup";
+      const res = await fetch(`${API}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setFormError(data.error || "Something went wrong. Please try again.");
+        shakeButton();
+        return;
+      }
+      onAuthenticated(data.user, data.token);
+    } catch (err) {
+      setFormError("Can't reach the server. Check your connection and try again.");
+      shakeButton();
+    } finally {
+      inFlightRef.current = false;
+      setSubmitting(false);
+      setButtonLoading(false);
+    }
+  };
+
+  const guestInFlightRef = useRef(false);
+  const handleGuestLogin = async () => {
+    if (guestInFlightRef.current) return;
+    guestInFlightRef.current = true;
+    setGuestLoading(true);
+    setGuestError("");
+    try {
+      const res = await fetch(`${API}/api/auth/guest`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setGuestError(data.error || "Guest mode isn't available right now.");
+        return;
+      }
+      onAuthenticated(data.user, data.token);
+    } catch (err) {
+      setGuestError("Can't reach the server. Check your connection and try again.");
+    } finally {
+      guestInFlightRef.current = false;
+      setGuestLoading(false);
+    }
+  };
+
+  const heading = mode === "login" ? "Welcome back" : "Create your account";
+  const subheading = mode === "login"
+    ? "Sign in to keep tracking renewals before they slip."
+    : "Start tracking renewals before they slip.";
 
   return (
     <div style={{
-      minHeight: "100vh",
-      background: "#0a1628",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontFamily: "Inter, sans-serif",
+      minHeight: "100vh", width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
+      background: "var(--bg)", padding: "24px", boxSizing: "border-box", fontFamily: "var(--font-body)",
     }}>
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        style={{
-          background: "#1a2236",
-          border: "1px solid rgba(0,229,255,0.15)",
-          borderRadius: 20,
-          padding: "48px 40px",
-          width: "100%",
-          maxWidth: 420,
-          boxShadow: "0 0 60px rgba(0,229,255,0.08)",
-        }}
-      >
-        {/* Logo */}
-        <div style={{ textAlign: "center", marginBottom: 36 }}>
-          <div style={{ fontSize: 36, marginBottom: 10 }}>⚡</div>
-          <div style={{ fontFamily: "Inter", fontSize: 22, fontWeight: 700, color: "#e8f0fe", letterSpacing: -0.3 }}>
-            RETAINIQ
-          </div>
-          <div style={{ fontFamily: "Inter", fontSize: 10, color: "#3d5070", letterSpacing: 2, marginTop: 4 }}>
-            BY DIGITAL MOVE
-          </div>
-        </div>
+      <div style={{
+        display: "flex", width: "100%", maxWidth: 920, minHeight: showIllustration ? 560 : "auto",
+        borderRadius: 16, overflow: "hidden", border: "1px solid var(--border)", boxShadow: "var(--shadow)",
+        background: "var(--card)",
+      }}>
+        {showIllustration && (
+          <div style={{
+            flex: "0 0 42%", background: "var(--sidebar)", padding: "44px 40px",
+            display: "flex", flexDirection: "column", justifyContent: "center", boxSizing: "border-box",
+            borderRight: "1px solid var(--border)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 40 }}>
+              <div style={{ width: 32, height: 32, flex: "0 0 auto", borderRadius: 9, background: "var(--cyan)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#ffffff" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" /></svg>
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: "var(--logo-text)" }}>RetainIQ</div>
+            </div>
 
-        {/* Username */}
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontFamily: "Inter", fontSize: 10, color: "#3d5070", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>
-            Username
-          </div>
-          <input
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-            placeholder="Enter username"
-            style={{
-              width: "100%",
-              background: "#0d1526",
-              border: "1px solid rgba(0,229,255,0.12)",
-              borderRadius: 10,
-              padding: "12px 16px",
-              fontFamily: "Inter, sans-serif",
-              fontSize: 14,
-              color: "#e8f0fe",
-              outline: "none",
-              boxSizing: "border-box",
-            }}
-            onFocus={e => e.target.style.borderColor = "rgba(0,229,255,0.4)"}
-            onBlur={e => e.target.style.borderColor = "rgba(0,229,255,0.12)"}
-            onKeyDown={e => e.key === "Enter" && handleLogin()}
-          />
-        </div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 700, color: "var(--text)", letterSpacing: -0.4, lineHeight: 1.15, marginBottom: 12 }}>
+              Every renewal,<br />seen coming.
+            </div>
+            <div style={{ color: "var(--text2)", fontSize: 13.5, lineHeight: 1.6, maxWidth: 260, marginBottom: 8 }}>
+              RetainIQ scores churn risk in real time, so your team calls the account before it becomes a statistic.
+            </div>
 
-        {/* Password */}
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontFamily: "Inter", fontSize: 10, color: "#3d5070", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>
-            Password
+            <SignalMoment />
           </div>
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder="Enter password"
-            style={{
-              width: "100%",
-              background: "#0d1526",
-              border: "1px solid rgba(0,229,255,0.12)",
-              borderRadius: 10,
-              padding: "12px 16px",
-              fontFamily: "Inter, sans-serif",
-              fontSize: 14,
-              color: "#e8f0fe",
-              outline: "none",
-              boxSizing: "border-box",
-            }}
-            onFocus={e => e.target.style.borderColor = "rgba(0,229,255,0.4)"}
-            onBlur={e => e.target.style.borderColor = "rgba(0,229,255,0.12)"}
-            onKeyDown={e => e.key === "Enter" && handleLogin()}
-          />
-        </div>
-
-        {/* Error */}
-        {error && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            style={{ color: "#ef4444", fontFamily: "Inter", fontSize: 11, marginBottom: 16, textAlign: "center" }}
-          >
-            {error}
-          </motion.div>
         )}
 
-        {/* Login button */}
-        <motion.button
-          whileHover={{ scale: 1.02, boxShadow: "0 4px 20px rgba(0,229,255,0.3)" }}
-          whileTap={{ scale: 0.98 }}
-          onClick={handleLogin}
-          style={{
-            width: "100%",
-            background: loading ? "rgba(0,229,255,0.1)" : "rgba(0,229,255,0.15)",
-            border: "1px solid rgba(0,229,255,0.3)",
-            borderRadius: 10,
-            padding: "13px",
-            color: "#00e5ff",
-            fontFamily: "Inter",
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: 2,
-            cursor: loading ? "not-allowed" : "pointer",
-            transition: "all 0.2s ease",
-          }}
-        >
-          {loading ? "AUTHENTICATING..." : "LOGIN →"}
-        </motion.button>
+        <div style={{ flex: "1 1 auto", padding: showIllustration ? "48px 48px" : "40px 28px", display: "flex", flexDirection: "column", justifyContent: "center", boxSizing: "border-box" }}>
+          {!showIllustration && (
+            <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 32 }}>
+              <div style={{ width: 30, height: 30, flex: "0 0 auto", borderRadius: 9, background: "var(--cyan)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="#ffffff" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" /></svg>
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text)" }}>RetainIQ</div>
+            </div>
+          )}
 
-        <div style={{ textAlign: "center", marginTop: 24, fontFamily: "Inter", fontSize: 10, color: "#3d5070" }}>
-          Powered by RetainIQ · Digital Move IT & Telecom
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 700, color: "var(--text)", letterSpacing: -0.4, marginBottom: 6 }}>
+            {heading}
+          </div>
+          <div style={{ color: "var(--text3)", fontSize: 13, marginBottom: 28 }}>
+            {subheading}
+          </div>
+
+          <form onSubmit={handleSubmit} noValidate>
+            <div style={{ marginBottom: 18 }}>
+              <label style={labelStyle} htmlFor="riq-email">Email</label>
+              <input
+                id="riq-email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => touch("email")}
+                placeholder="you@company.com"
+                aria-invalid={!!emailError}
+                aria-describedby="riq-email-error"
+                style={fieldStyle(!!emailError)}
+              />
+              <div id="riq-email-error"><FieldError>{emailError}</FieldError></div>
+            </div>
+
+            <div style={{ marginBottom: mode === "signup" ? 18 : 10 }}>
+              <label style={labelStyle} htmlFor="riq-password">Password</label>
+              <div style={{ position: "relative" }}>
+                <input
+                  id="riq-password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete={mode === "login" ? "current-password" : "new-password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onBlur={() => touch("password")}
+                  placeholder="At least 8 characters"
+                  aria-invalid={!!passwordError}
+                  aria-describedby="riq-password-error"
+                  style={{ ...fieldStyle(!!passwordError), paddingRight: 42 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  style={{ position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", color: "var(--text3)", cursor: "pointer", padding: 8, display: "flex", lineHeight: 0 }}
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
+              <div id="riq-password-error"><FieldError>{passwordError}</FieldError></div>
+            </div>
+
+            {mode === "signup" && (
+              <div style={{ marginBottom: 10 }}>
+                <label style={labelStyle} htmlFor="riq-confirm">Confirm password</label>
+                <input
+                  id="riq-confirm"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onBlur={() => touch("confirmPassword")}
+                  placeholder="Re-enter your password"
+                  aria-invalid={!!confirmError}
+                  aria-describedby="riq-confirm-error"
+                  style={fieldStyle(!!confirmError)}
+                />
+                <div id="riq-confirm-error"><FieldError>{confirmError}</FieldError></div>
+              </div>
+            )}
+
+            <FieldError>{formError}</FieldError>
+
+            <button
+              ref={btnRef}
+              type="submit"
+              disabled={submitting || guestLoading}
+              aria-busy={submitting}
+              style={{
+                position: "relative", width: "100%", marginTop: 16, background: "var(--cyan)", border: "none",
+                borderRadius: 9, padding: "13px", color: "#ffffff", fontFamily: "var(--font-body)", fontSize: 14,
+                fontWeight: 600, cursor: submitting ? "default" : "pointer",
+              }}
+            >
+              <span ref={btnLabelRef} style={{ display: "inline-block" }}>
+                {mode === "login" ? "Sign in" : "Create account"}
+              </span>
+              <span ref={btnSpinnerRef} style={{ visibility: "hidden", opacity: 0, position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ width: 15, height: 15, border: "2px solid rgba(255,255,255,0.35)", borderTop: "2px solid #ffffff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+              </span>
+            </button>
+          </form>
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 18 }}>
+            {mode === "login" ? (
+              <button type="button" onClick={() => setShowForgotNote((s) => !s)} style={{ background: "none", border: "none", padding: 0, color: "var(--text3)", fontSize: 12.5, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}>
+                Forgot password?
+              </button>
+            ) : <span />}
+            <button type="button" onClick={() => switchMode(mode === "login" ? "signup" : "login")} style={{ background: "none", border: "none", padding: 0, color: "var(--text3)", fontSize: 12.5, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}>
+              {mode === "login" ? "Create account" : "Already have an account? Sign in"}
+            </button>
+          </div>
+
+          {showForgotNote && (
+            <div style={{ marginTop: 10, color: "var(--text3)", fontSize: 12, lineHeight: 1.5 }}>
+              Password reset isn't available yet — contact your account admin.
+            </div>
+          )}
+
+          {guestModeEnabled && (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 24 }}>
+                <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+                <span style={{ fontSize: 11, color: "var(--text3)" }}>or</span>
+                <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+              </div>
+              <button
+                type="button"
+                onClick={handleGuestLogin}
+                disabled={guestLoading || submitting}
+                style={{
+                  width: "100%", marginTop: 14, background: "transparent", border: "1px solid var(--border2)",
+                  borderRadius: 9, padding: "10px", color: "var(--text3)", fontFamily: "var(--font-body)", fontSize: 13,
+                  fontWeight: 500, cursor: guestLoading ? "default" : "pointer",
+                }}
+              >
+                {guestLoading ? "Loading demo…" : "Continue as Guest"}
+              </button>
+              <div style={{ textAlign: "center", marginTop: 6, fontSize: 11, color: "var(--text3)" }}>
+                Browse a live demo — read-only, no account needed.
+              </div>
+              <FieldError>{guestError}</FieldError>
+            </>
+          )}
+
+          <div style={{ textAlign: "center", marginTop: 28, fontSize: 11, color: "var(--text3)" }}>
+            RetainIQ · Digital Move IT & Telecom
+          </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

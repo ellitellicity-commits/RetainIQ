@@ -2,6 +2,7 @@ import os, sqlite3
 from datetime import date
 from flask import Blueprint, request, jsonify
 from notifications_api import create_notification
+from auth_api import block_guest
 
 activities_bp = Blueprint("activities_bp", __name__)
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "retainiq.db")
@@ -145,6 +146,7 @@ def list_activities():
 
 
 @activities_bp.route("/api/db/activities", methods=["POST"])
+@block_guest
 def create_activity():
     d = request.get_json(force=True) or {}
     client_id = d.get("client_id")

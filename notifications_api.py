@@ -1,6 +1,7 @@
 import os, sqlite3
 from datetime import datetime
 from flask import Blueprint, request, jsonify
+from auth_api import block_guest
 
 notifications_bp = Blueprint("notifications_bp", __name__)
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "retainiq.db")
@@ -58,6 +59,7 @@ def list_notifications():
 
 
 @notifications_bp.route("/api/db/notifications/<int:nid>", methods=["PATCH"])
+@block_guest
 def mark_read(nid):
     conn = get_conn()
     try:
@@ -72,6 +74,7 @@ def mark_read(nid):
 
 
 @notifications_bp.route("/api/db/notifications/mark-all-read", methods=["PATCH"])
+@block_guest
 def mark_all_read():
     conn = get_conn()
     try:

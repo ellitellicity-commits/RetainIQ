@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 import httpx
 from flask import Blueprint, request, jsonify, current_app
 from activities_api import log_activity
+from auth_api import block_guest
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "retainiq.db")
@@ -418,6 +419,7 @@ def _handle_chatbot(message, history):
 
 
 @chatbot_bp.route("/api/chatbot/confirm", methods=["POST"])
+@block_guest
 def chatbot_confirm():
     data = request.get_json(force=True) or {}
     tool = data.get("tool")
