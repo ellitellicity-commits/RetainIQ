@@ -8,7 +8,7 @@ colors:
   hover: "#e8e4da"
   border: "#ddd8cc"
   border2: "#ccc7b9"
-  brand-indigo: "#3452c4"
+  brand-emerald: "#0b7a4c"
   amber-caution: "#b8740f"
   alert-red: "#c0392b"
   soft-alert: "#b5483f"
@@ -63,7 +63,7 @@ spacing:
   xxl: "32px"
 components:
   button-primary:
-    backgroundColor: "{colors.brand-indigo}"
+    backgroundColor: "{colors.brand-emerald}"
     textColor: "#ffffff"
     rounded: "{rounded.sm}"
     padding: "10px 18px"
@@ -91,13 +91,15 @@ components:
 
 RetainIQ's interface is an instrument panel for catching account risk before it becomes churn, not a decorative CRM shell. Every recurring visual device — the pulsing live-status dot, the risk gauge, the color-coded journey stages — exists to answer one question at a glance: is this account fine, or does it need a call today. Amber and Red are reserved for escalating alarm, and Green is reserved for the confirmed/all-clear reading — that reservation is the entire point of the palette.
 
-**Revision note (Visualization v2):** the system originally used one green (`--cyan`/`--brand-bright`) for *both* the brand/interactive accent and the "healthy" semantic reading — documented at the time as intentional ("Signal Green is deliberately the resting/all-clear state"). That collision — a primary button and a "this account is fine" badge reading as the same color — was identified as making the product feel generic/templated and was deliberately split: brand/interactive actions (nav active state, primary buttons, links, focus rings) now route through a dedicated **Brand Indigo** accent, while Green is reserved purely for semantic "healthy/confirmed" status. The Reserved Alarm Rule for Amber/Red is unchanged. Similarly, the former "One Font Rule" (Inter for the entire hierarchy) has been superseded — see Typography.
+**Revision note (Visualization v2):** the system originally used one green (`--cyan`/`--brand-bright`) for *both* the brand/interactive accent and the "healthy" semantic reading — documented at the time as intentional ("Signal Green is deliberately the resting/all-clear state"). That collision — a primary button and a "this account is fine" badge reading as the same color — was identified as making the product feel generic/templated and was deliberately split: brand/interactive actions (nav active state, primary buttons, links, focus rings) routed through a dedicated **Brand Indigo** accent, while Green was reserved purely for semantic "healthy/confirmed" status. Similarly, the former "One Font Rule" (Inter for the entire hierarchy) has been superseded — see Typography.
+
+**Revision note (Brand restoration):** Brand Indigo was a deliberate but ultimately unwanted detour — the product's original identity was green, and the indigo swap read as generic. The brand accent has been reverted to green, but *not* back to the pre-v2 state that motivated the original split: that state used the brand green and the status green as nearly the same tone (`#0f6e56` vs `#14735d`), which is exactly the "primary button reads as a healthy badge" collision the split was meant to fix. Instead, brand now uses a distinct, more saturated **Brand Emerald** tone from the same green family, while Confirmed Green keeps its exact original value, untouched, reserved for status only. The two are related (same hue family, evoking one consistent "green" identity) but never mistakable for each other (visibly different saturation/lightness). The Reserved Alarm Rule for Amber/Red is unaffected by either revision.
 
 The voice is calm and clinical: dense data surfaces (KPI grids, sortable tables, drawers packed with contract detail) rendered with soft ambient shadows, restrained 8–16px radii, and a small, deliberate type system (display / mono-stat / body) carrying the hierarchy. Motion is present but purposeful — spring-eased panels, staggered card fade-ups, a pulsing dot on live status — never decorative for its own sake. The system supports full light/dark theming through CSS custom properties; almost every surface, text, and accent color routes through a `var(--token)` rather than a literal value.
 
 **Key Characteristics:**
 - A three-part type system: Space Grotesk for page titles/display, JetBrains Mono (tabular figures) for stat-card numbers, Inter for everything else — see Typography.
-- Brand Indigo (`--cyan`/`--brand-bright`) as the interactive accent, kept distinct from Green (the "healthy/confirmed" semantic reading) and from Amber/Red (escalating risk).
+- Brand Emerald (`--cyan`/`--brand-bright`) as the interactive accent — a vivid green tonally distinct from Confirmed Green (the "healthy/confirmed" semantic reading) and from Amber/Red (escalating risk).
 - Flat-by-default surfaces with soft ambient shadows at rest, deeper directional shadows on overlays.
 - Small, consistent radii (6–16px) plus a 999px pill for filters and status pills — no sharp corners, no heavy rounding.
 - Full light/dark theming via CSS custom properties, with a brighter accent variant (`--brand-bright`) swapped in for dark mode where the flat brand color would go flat against a dark surface.
@@ -107,10 +109,10 @@ The voice is calm and clinical: dense data surfaces (KPI grids, sortable tables,
 An editorial palette that now separates **brand** (what's interactive) from **semantic status** (what's happening to an account), with amber/red reserved strictly for risk escalation and green reserved for the confirmed/healthy reading.
 
 ### Primary
-- **Brand Indigo** (`#3452c4` light / `#7c8cf0` dark): the brand/interactive accent — primary buttons, active nav state, focus rings, links, the command palette, the active tab underline. Deliberately a distinct hue from Confirmed Green below, so a primary action never visually reads as a "healthy" status. In dark mode this token (`--brand-bright`) shifts to a brighter periwinkle (`#96A3FF`) so it stays legible against dark surfaces; the flat `#3452c4` (`--cyan`) is kept for smaller accents (icons, borders, glows) where full brightness isn't needed.
+- **Brand Emerald** (`#0b7a4c` light / `#1fa374` dark): the brand/interactive accent — primary buttons, active nav state, focus rings, links, the command palette, the active tab underline. Rooted in the product's original green identity, but pushed to a more saturated, slightly cooler-toward-pure-green tone than Confirmed Green below, so a primary action never visually reads as a "healthy" status even though both are unmistakably "green." In dark mode this token (`--brand-bright`) shifts to a brighter mint (`#5ed9a3`) so it stays legible against dark surfaces; the flat `#0b7a4c` (`--cyan`) is kept for smaller accents (icons, borders, glows) where full brightness isn't needed.
 
 ### Secondary
-- **Confirmed Green** (`#14735d` light / `#1b7361` dark): the system's one semantic "healthy/confirmed" reading — the Active/Healthy status chip, the "live" status pill, a completed send action, the retention-trend line when it's in a healthy band. Never used for brand/interactive elements (see Brand Indigo above) — this keeps "this is safe to click" and "this account is fine" visually distinct.
+- **Confirmed Green** (`#14735d` light / `#1b7361` dark): the system's one semantic "healthy/confirmed" reading — the Active/Healthy status chip, the "live" status pill, a completed send action, the retention-trend line when it's in a healthy band. Its exact value is untouched by the brand-color revision and never used for brand/interactive elements (see Brand Emerald above) — this keeps "this is safe to click" and "this account is fine" visually distinct even though both now live in the green family.
 - **AI Purple** (`#7c3aed` light / `#a78bfa` dark): marks AI-originated content and meeting-type activity — the copilot sparkle icon, AI insight notifications, meeting entries on the activity timeline. Reserved for "this came from the assistant," not used as a general accent.
 - **Info Blue** (`#2563eb` light / `#60a5fa` dark): neutral secondary information — medium-priority markers, pending states, mention notifications. The quietest of the semantic colors; used when something needs a color but isn't yet urgent.
 
@@ -128,9 +130,9 @@ An editorial palette that now separates **brand** (what's interactive) from **se
 ### Named Rules
 **The Reserved Alarm Rule.** Amber and Red never appear as decoration or as a general accent — they exist exclusively to mark At-Risk and Critical/Expired states. If a new element needs an eye-catching color without implying risk, reach for Signal Green or AI Purple, never Amber/Red.
 
-**The Bright Variant Rule.** Dark theme doesn't just invert lightness — where the flat brand accent (`--cyan`, `#3452c4`) would read flat against a dark surface, dark mode swaps in a distinct brighter token (`--brand-bright`, `#96A3FF`) for foregrounded uses like active nav text and the logo. Follow this pattern for any new accent that needs to read clearly on both a light card and a near-black sidebar.
+**The Bright Variant Rule.** Dark theme doesn't just invert lightness — where the flat brand accent (`--cyan`, `#0b7a4c`) would read flat against a dark surface, dark mode swaps in a distinct brighter token (`--brand-bright`, `#5ed9a3`) for foregrounded uses like active nav text and the logo. Follow this pattern for any new accent that needs to read clearly on both a light card and a near-black sidebar.
 
-**The Brand/Status Separation Rule.** `--cyan`/`--brand-bright` (Brand Indigo) marks *interactive* elements — anything clickable, active, or focused. `--green` (Confirmed Green) marks *semantic* healthy/confirmed status. The two must never be the same hue: a new component reaching for "the accent color" needs to first ask whether it's marking an action (→ brand indigo) or a status (→ the matching semantic color).
+**The Brand/Status Separation Rule.** `--cyan`/`--brand-bright` (Brand Emerald) marks *interactive* elements — anything clickable, active, or focused. `--green` (Confirmed Green) marks *semantic* healthy/confirmed status. The two live in the same hue family on purpose (one consistent "green" brand identity) but must never be the same tone: a new component reaching for "the accent color" needs to first ask whether it's marking an action (→ brand emerald) or a status (→ the matching semantic color), and never substitute one token's literal value for the other's.
 
 ### Known inconsistency
 The Active/At-Risk/Critical/Expired **status chip** colors (used in Dashboard and Clients tables) are hardcoded hex pairs (e.g. `#f3dada`/`#a83838`) defined locally per-page, not routed through the `--var()` token system like every other color in the app. They render identically in light and dark mode and don't currently adapt. This is a known quirk of the current implementation, not an intentional design decision — new status-color work should route through tokens; don't propagate the hardcoded pattern.
@@ -218,7 +220,7 @@ Small, consistent radii throughout — nothing sharp, nothing heavily rounded. I
 - **Focus:** border tightens to `--border2` / accent color; no heavy glow, kept consistent with the system's restrained motion language.
 
 ### Navigation (Sidebar)
-- **Style:** icon + label rows, 9px radius, active state = Brand-Indigo-tinted background (`--cyan-dim`) with Brand Indigo (bright variant) text; inactive = transparent background, `--text2` label, hover picks up `--hover2`.
+- **Style:** icon + label rows, 9px radius, active state = Brand-Emerald-tinted background (`--cyan-dim`) with Brand Emerald (bright variant) text; inactive = transparent background, `--text2` label, hover picks up `--hover2`.
 - **Collapse behavior:** icon-only at 66px width with tooltips (`title` attr) replacing visible labels; a toggle button lives at the top of the rail.
 
 ### Charts (Recharts)

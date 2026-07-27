@@ -19,32 +19,74 @@ const EyeOffIcon = () => (
   </svg>
 );
 
-// The product's own recurring "pulsing live-status dot" motif (see the
-// header's live-pill), reused here as the login page's one distinctive
-// touch instead of introducing an unrelated illustration.
-function SignalMoment() {
-  const pathRef = useRef(null);
+// A small relationship graph -- one account node connected to stakeholders
+// of varying tie strength -- standing in for what the product actually
+// does (tracking and scoring account relationships), rather than a
+// decorative illustration. Lines draw in, then nodes settle into place,
+// then the strongest ties pick up the app's recurring pulsing-dot motif
+// (see the header's live-pill) to read as "live" relationships.
+const RELATIONSHIP_NODES = [
+  { x: 186, y: 32, r: 6, strength: "strong" },
+  { x: 214, y: 96, r: 6, strength: "strong" },
+  { x: 272, y: 52, r: 4.5, strength: "medium" },
+  { x: 290, y: 112, r: 4, strength: "light" },
+];
+const HUB = { x: 68, y: 70 };
+
+function RelationshipMoment() {
+  const lineRefs = useRef([]);
+  const nodeRefs = useRef([]);
+  const hubRef = useRef(null);
 
   useEffect(() => {
-    const path = pathRef.current;
-    if (!path) return;
-    const length = path.getTotalLength();
-    gsap.set(path, { strokeDasharray: length, strokeDashoffset: length });
-    gsap.to(path, { strokeDashoffset: 0, duration: 1.6, ease: "power2.out", delay: 0.35 });
+    const lines = lineRefs.current.filter(Boolean);
+    const nodes = nodeRefs.current.filter(Boolean);
+    const hub = hubRef.current;
+    if (!hub || lines.length === 0 || nodes.length === 0) return undefined;
+
+    const targetR = nodes.map((node) => Number(node.getAttribute("r")));
+    const targetLineOpacity = RELATIONSHIP_NODES.map((n) => (n.strength === "light" ? 0.55 : 1));
+    gsap.set(nodes, { attr: { r: 0 } });
+    gsap.set(hub, { attr: { r: 0 } });
+    gsap.set(lines, { opacity: 0 });
+
+    const tl = gsap.timeline({ delay: 0.3 });
+    tl.to(hub, { attr: { r: 9 }, duration: 0.4, ease: "back.out(2)" });
+    lines.forEach((line, i) => {
+      tl.to(line, { opacity: targetLineOpacity[i], duration: 0.35, ease: "power1.out" }, i === 0 ? "-=0.1" : "-=0.2");
+    });
+    nodes.forEach((node, i) => {
+      tl.to(node, { attr: { r: targetR[i] }, duration: 0.4, ease: "back.out(2.2)" }, i === 0 ? "-=0.15" : "-=0.25");
+    });
+
+    return () => tl.kill();
   }, []);
 
   return (
     <svg width="100%" height="140" viewBox="0 0 320 140" fill="none" style={{ overflow: "visible" }} aria-hidden="true">
-      <line x1="0" y1="104" x2="320" y2="104" stroke="var(--border)" strokeWidth="1" />
-      <path
-        ref={pathRef}
-        d="M4 60 C 60 60, 80 118, 130 118 S 210 30, 260 30 S 300 46, 316 44"
-        stroke="var(--brand-bright)"
-        strokeWidth="3"
-        strokeLinecap="round"
-        fill="none"
-      />
-      <circle cx="316" cy="44" r="5" fill="var(--brand-bright)" style={{ animation: "pulse-dot 2s infinite" }} />
+      {RELATIONSHIP_NODES.map((n, i) => (
+        <line
+          key={`line-${i}`}
+          ref={(el) => (lineRefs.current[i] = el)}
+          x1={HUB.x} y1={HUB.y} x2={n.x} y2={n.y}
+          stroke="var(--brand-bright)"
+          strokeWidth={n.strength === "strong" ? 2.25 : n.strength === "medium" ? 1.5 : 1}
+          strokeLinecap="round"
+          opacity={n.strength === "light" ? 0.55 : 1}
+        />
+      ))}
+      <circle ref={hubRef} cx={HUB.x} cy={HUB.y} r="9" fill="var(--card)" stroke="var(--brand-bright)" strokeWidth="2" />
+      {RELATIONSHIP_NODES.map((n, i) => (
+        <circle
+          key={`node-${i}`}
+          ref={(el) => (nodeRefs.current[i] = el)}
+          cx={n.x} cy={n.y} r={n.r}
+          fill={n.strength === "light" ? "var(--card)" : "var(--brand-bright)"}
+          stroke="var(--brand-bright)"
+          strokeWidth={n.strength === "light" ? 1.5 : 0}
+          style={n.strength === "strong" ? { animation: "pulse-dot 2.4s infinite", transformBox: "fill-box", transformOrigin: "center" } : undefined}
+        />
+      ))}
     </svg>
   );
 }
@@ -241,7 +283,7 @@ export default function Login({ API, onAuthenticated }) {
               RetainIQ scores churn risk in real time, so your team calls the account before it becomes a statistic.
             </div>
 
-            <SignalMoment />
+            <RelationshipMoment />
           </div>
         )}
 
@@ -361,7 +403,7 @@ export default function Login({ API, onAuthenticated }) {
 
           {showForgotNote && (
             <div style={{ marginTop: 10, color: "var(--text3)", fontSize: 12, lineHeight: 1.5 }}>
-              Password reset isn't available yet — contact your account admin.
+              Password reset isn't available yet. Contact your account admin.
             </div>
           )}
 
@@ -385,7 +427,7 @@ export default function Login({ API, onAuthenticated }) {
                 {guestLoading ? "Loading demo…" : "Continue as Guest"}
               </button>
               <div style={{ textAlign: "center", marginTop: 6, fontSize: 11, color: "var(--text3)" }}>
-                Browse a live demo — read-only, no account needed.
+                Browse a live demo, read-only, no account needed.
               </div>
               <FieldError>{guestError}</FieldError>
             </>

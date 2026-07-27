@@ -4,19 +4,19 @@
   "title": "Design System: RetainIQ",
   "extensions": {
     "colorMeta": {
-      "brand-indigo": {
+      "brand-emerald": {
         "role": "primary",
-        "displayName": "Brand Indigo",
-        "canonical": "#3452c4",
+        "displayName": "Brand Emerald",
+        "canonical": "#0b7a4c",
         "tonalRamp": [
-          "oklch(15% 0.04 265)",
-          "oklch(25% 0.08 265)",
-          "oklch(35% 0.13 265)",
-          "oklch(45% 0.18 265)",
-          "oklch(52% 0.21 265)",
-          "oklch(65% 0.18 265)",
-          "oklch(80% 0.10 265)",
-          "oklch(95% 0.03 265)"
+          "oklch(15% 0.04 150)",
+          "oklch(25% 0.08 150)",
+          "oklch(35% 0.13 150)",
+          "oklch(45% 0.18 150)",
+          "oklch(52% 0.19 150)",
+          "oklch(65% 0.16 150)",
+          "oklch(80% 0.09 150)",
+          "oklch(95% 0.03 150)"
         ]
       },
       "confirmed-green": {
@@ -225,7 +225,7 @@
       "refersTo": "button-primary",
       "description": "Main call-to-action button (Save, Send, Generate email).",
       "html": "<button class=\"ds-btn-primary\">Save changes</button>",
-      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border: none; border-radius: 9px; font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; color: #ffffff; background: var(--brand-indigo, #3452c4); cursor: pointer; transition: background 0.15s ease, transform 0.15s ease; } .ds-btn-primary:hover { background: #2941a3; transform: translateY(-1px); } .ds-btn-primary:focus-visible { outline: 2px solid var(--brand-indigo, #3452c4); outline-offset: 2px; }"
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border: none; border-radius: 9px; font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; color: #ffffff; background: var(--brand-emerald, #0b7a4c); cursor: pointer; transition: background 0.15s ease, transform 0.15s ease; } .ds-btn-primary:hover { background: #0a6640; transform: translateY(-1px); } .ds-btn-primary:focus-visible { outline: 2px solid var(--brand-emerald, #0b7a4c); outline-offset: 2px; }"
     },
     {
       "name": "Ghost Button",
@@ -233,7 +233,7 @@
       "refersTo": "button-ghost",
       "description": "Secondary action button (Cancel, Copy) paired next to a primary button.",
       "html": "<button class=\"ds-btn-ghost\">Cancel</button>",
-      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border: 1px solid var(--border2, #ccc7b9); border-radius: 9px; font-family: Inter, sans-serif; font-size: 13px; font-weight: 500; color: var(--text-secondary, #57534a); background: transparent; cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; } .ds-btn-ghost:hover { color: var(--brand-indigo, #3452c4); border-color: var(--brand-indigo, #3452c4); background: rgba(52,82,196,0.08); }"
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border: 1px solid var(--border2, #ccc7b9); border-radius: 9px; font-family: Inter, sans-serif; font-size: 13px; font-weight: 500; color: var(--text-secondary, #57534a); background: transparent; cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; } .ds-btn-ghost:hover { color: var(--brand-emerald, #0b7a4c); border-color: var(--brand-emerald, #0b7a4c); background: rgba(11,122,76,0.08); }"
     },
     {
       "name": "KPI Stat Card",
@@ -241,14 +241,14 @@
       "refersTo": "stat-card",
       "description": "Dashboard KPI tile with label and large accent-colored value.",
       "html": "<div class=\"ds-stat-card\"><div class=\"ds-stat-label\">Total clients</div><div class=\"ds-stat-value\">248</div></div>",
-      "css": ".ds-stat-card { background: var(--card, #faf8f2); border: 1px solid var(--border2, #ccc7b9); border-radius: 14px; padding: 22px 24px; box-shadow: 0 2px 14px rgba(0,0,0,0.12); transition: transform 0.2s ease; } .ds-stat-card:hover { transform: translateY(-2px); } .ds-stat-label { font-family: Inter, sans-serif; font-size: 14px; color: var(--text-secondary, #57534a); margin-bottom: 12px; } .ds-stat-value { font-family: Inter, sans-serif; font-size: 34px; font-weight: 700; color: var(--brand-indigo, #3452c4); letter-spacing: -0.6px; line-height: 1; }"
+      "css": ".ds-stat-card { background: var(--card, #faf8f2); border: 1px solid var(--border2, #ccc7b9); border-radius: 14px; padding: 22px 24px; box-shadow: 0 2px 14px rgba(0,0,0,0.12); transition: transform 0.2s ease; } .ds-stat-card:hover { transform: translateY(-2px); } .ds-stat-label { font-family: Inter, sans-serif; font-size: 14px; color: var(--text-secondary, #57534a); margin-bottom: 12px; } .ds-stat-value { font-family: Inter, sans-serif; font-size: 34px; font-weight: 700; color: var(--brand-emerald, #0b7a4c); letter-spacing: -0.6px; line-height: 1; }"
     },
     {
       "name": "Filter Pill",
       "kind": "chip",
       "description": "Toggleable filter chip (All / Critical / At Risk / Healthy).",
       "html": "<button class=\"ds-filter-pill ds-filter-pill--active\">Critical</button>",
-      "css": ".ds-filter-pill { padding: 8px 18px; border-radius: 999px; border: 1px solid var(--border, #ddd8cc); background: transparent; color: var(--text-secondary, #57534a); font-family: Inter, sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; } .ds-filter-pill--active { border-color: var(--brand-indigo, #3452c4); background: rgba(52,82,196,0.10); color: var(--brand-indigo, #3452c4); }"
+      "css": ".ds-filter-pill { padding: 8px 18px; border-radius: 999px; border: 1px solid var(--border, #ddd8cc); background: transparent; color: var(--text-secondary, #57534a); font-family: Inter, sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; } .ds-filter-pill--active { border-color: var(--brand-emerald, #0b7a4c); background: rgba(11,122,76,0.10); color: var(--brand-emerald, #0b7a4c); }"
     },
     {
       "name": "Status Chip",
@@ -263,7 +263,7 @@
       "kind": "nav",
       "description": "Primary navigation row inside the collapsible left rail.",
       "html": "<button class=\"ds-nav-item ds-nav-item--active\"><svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1.5\"/></svg><span>Dashboard</span></button>",
-      "css": ".ds-nav-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: none; border-radius: 9px; background: transparent; color: var(--text-secondary, #57534a); font-family: Inter, sans-serif; font-size: 14.5px; font-weight: 500; text-align: left; cursor: pointer; transition: background 0.12s ease; } .ds-nav-item:hover { background: var(--hover2, #dedacf); } .ds-nav-item--active { background: rgba(52,82,196,0.18); color: var(--brand-indigo, #3452c4); }"
+      "css": ".ds-nav-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: none; border-radius: 9px; background: transparent; color: var(--text-secondary, #57534a); font-family: Inter, sans-serif; font-size: 14.5px; font-weight: 500; text-align: left; cursor: pointer; transition: background 0.12s ease; } .ds-nav-item:hover { background: var(--hover2, #dedacf); } .ds-nav-item--active { background: rgba(11,122,76,0.18); color: var(--brand-emerald, #0b7a4c); }"
     },
     {
       "name": "Insight Row (AI Co-pilot)",
@@ -276,15 +276,15 @@
       "name": "Retention Area Chart",
       "kind": "custom",
       "description": "First recharts usage in the system (Analytics \u2192 Retention trend). Gradient-filled area over a horizontal-only grid, all styling driven by tokens instead of recharts defaults; this static SVG is a representative preview, not the live recharts output.",
-      "html": "<div class=\"ds-chart-card\"><div class=\"ds-chart-title\">Retention trend</div><svg class=\"ds-chart-svg\" viewBox=\"0 0 300 120\" preserveAspectRatio=\"none\" role=\"img\" aria-label=\"Retention trend, ending at 36%\"><defs><linearGradient id=\"ds-chart-fill\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"var(--brand-bright, #96A3FF)\" stop-opacity=\"0.28\"/><stop offset=\"100%\" stop-color=\"var(--brand-bright, #96A3FF)\" stop-opacity=\"0\"/></linearGradient></defs><line x1=\"0\" y1=\"20\" x2=\"300\" y2=\"20\" class=\"ds-chart-grid\"/><line x1=\"0\" y1=\"60\" x2=\"300\" y2=\"60\" class=\"ds-chart-grid\"/><line x1=\"0\" y1=\"100\" x2=\"300\" y2=\"100\" class=\"ds-chart-grid\"/><path d=\"M0,85 L60,80 L120,75 L180,78 L240,70 L300,82 L300,120 L0,120 Z\" fill=\"url(#ds-chart-fill)\"/><path d=\"M0,85 L60,80 L120,75 L180,78 L240,70 L300,82\" class=\"ds-chart-line\"/><circle cx=\"300\" cy=\"82\" r=\"3\" class=\"ds-chart-dot\"/></svg></div>",
-      "css": ".ds-chart-card { background: var(--card, #faf8f2); border: 1px solid var(--border2, #ccc7b9); border-radius: 12px; padding: 16px 18px; } .ds-chart-title { font-family: Inter, sans-serif; font-size: 14px; font-weight: 600; color: var(--text-primary, #2a2a28); margin-bottom: 16px; } .ds-chart-svg { width: 100%; height: 120px; overflow: visible; } .ds-chart-grid { stroke: var(--border, #ddd8cc); stroke-width: 1; } .ds-chart-line { fill: none; stroke: var(--brand-bright, #96A3FF); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; } .ds-chart-dot { fill: var(--brand-bright, #96A3FF); stroke: var(--card, #faf8f2); stroke-width: 2; }"
+      "html": "<div class=\"ds-chart-card\"><div class=\"ds-chart-title\">Retention trend</div><svg class=\"ds-chart-svg\" viewBox=\"0 0 300 120\" preserveAspectRatio=\"none\" role=\"img\" aria-label=\"Retention trend, ending at 36%\"><defs><linearGradient id=\"ds-chart-fill\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"var(--brand-bright, #5ed9a3)\" stop-opacity=\"0.28\"/><stop offset=\"100%\" stop-color=\"var(--brand-bright, #5ed9a3)\" stop-opacity=\"0\"/></linearGradient></defs><line x1=\"0\" y1=\"20\" x2=\"300\" y2=\"20\" class=\"ds-chart-grid\"/><line x1=\"0\" y1=\"60\" x2=\"300\" y2=\"60\" class=\"ds-chart-grid\"/><line x1=\"0\" y1=\"100\" x2=\"300\" y2=\"100\" class=\"ds-chart-grid\"/><path d=\"M0,85 L60,80 L120,75 L180,78 L240,70 L300,82 L300,120 L0,120 Z\" fill=\"url(#ds-chart-fill)\"/><path d=\"M0,85 L60,80 L120,75 L180,78 L240,70 L300,82\" class=\"ds-chart-line\"/><circle cx=\"300\" cy=\"82\" r=\"3\" class=\"ds-chart-dot\"/></svg></div>",
+      "css": ".ds-chart-card { background: var(--card, #faf8f2); border: 1px solid var(--border2, #ccc7b9); border-radius: 12px; padding: 16px 18px; } .ds-chart-title { font-family: Inter, sans-serif; font-size: 14px; font-weight: 600; color: var(--text-primary, #2a2a28); margin-bottom: 16px; } .ds-chart-svg { width: 100%; height: 120px; overflow: visible; } .ds-chart-grid { stroke: var(--border, #ddd8cc); stroke-width: 1; } .ds-chart-line { fill: none; stroke: var(--brand-bright, #5ed9a3); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; } .ds-chart-dot { fill: var(--brand-bright, #5ed9a3); stroke: var(--card, #faf8f2); stroke-width: 2; }"
     },
     {
       "name": "Inline Log-Entry Form",
       "kind": "custom",
       "description": "\"+ Log a call\" / \"+ Log a meeting\" in the client drawer's Activity tab. Same inline bordered-box pattern as the drawer's existing \"+ Add contact\" form -- a short capture form stays inline in the flow rather than opening a modal.",
       "html": "<div class=\"ds-log-form\"><div class=\"ds-log-form-title\">Log a call</div><textarea class=\"ds-log-form-field\" placeholder=\"Notes\"></textarea><input class=\"ds-log-form-field\" type=\"date\" value=\"2026-07-24\"/><div class=\"ds-log-form-actions\"><button class=\"ds-log-form-save\">Save</button><button class=\"ds-log-form-cancel\">Cancel</button></div></div>",
-      "css": ".ds-log-form { border: 1px solid var(--border2, #ccc7b9); border-radius: 10px; padding: 12px 13px; background: var(--hover, #e8e4da); } .ds-log-form-title { font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; color: var(--text-primary, #2a2a28); margin-bottom: 8px; } .ds-log-form-field { width: 100%; padding: 8px 11px; border-radius: 8px; border: 1px solid var(--border, #ddd8cc); background: var(--bg, #ece8e0); color: var(--text-primary, #2a2a28); font-family: Inter, sans-serif; font-size: 13.5px; box-sizing: border-box; margin-bottom: 8px; } .ds-log-form-actions { display: flex; gap: 8px; } .ds-log-form-save { flex: 1; padding: 8px; border-radius: 8px; border: none; background: var(--brand-indigo, #3452c4); color: #fff; font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; } .ds-log-form-cancel { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border2, #ccc7b9); background: transparent; color: var(--text-tertiary, #827d6f); font-family: Inter, sans-serif; font-size: 13px; cursor: pointer; }"
+      "css": ".ds-log-form { border: 1px solid var(--border2, #ccc7b9); border-radius: 10px; padding: 12px 13px; background: var(--hover, #e8e4da); } .ds-log-form-title { font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; color: var(--text-primary, #2a2a28); margin-bottom: 8px; } .ds-log-form-field { width: 100%; padding: 8px 11px; border-radius: 8px; border: 1px solid var(--border, #ddd8cc); background: var(--bg, #ece8e0); color: var(--text-primary, #2a2a28); font-family: Inter, sans-serif; font-size: 13.5px; box-sizing: border-box; margin-bottom: 8px; } .ds-log-form-actions { display: flex; gap: 8px; } .ds-log-form-save { flex: 1; padding: 8px; border-radius: 8px; border: none; background: var(--brand-emerald, #0b7a4c); color: #fff; font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; } .ds-log-form-cancel { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border2, #ccc7b9); background: transparent; color: var(--text-tertiary, #827d6f); font-family: Inter, sans-serif; font-size: 13px; cursor: pointer; }"
     },
     {
       "name": "Activity Row",
@@ -296,10 +296,10 @@
   ],
   "narrative": {
     "northStar": "The Early Warning System",
-    "overview": "RetainIQ's interface is an instrument panel for catching account risk before it becomes churn, not a decorative CRM shell. Every recurring visual device \u2014 the pulsing live-status dot, the risk gauge, the color-coded journey stages \u2014 exists to answer one question at a glance: is this account fine, or does it need a call today. Amber and Red are reserved for escalating alarm, and Green is reserved for the confirmed/all-clear reading \u2014 that reservation is the entire point of the palette.\n\nRevision note (Visualization v2): the system originally used one green (--cyan/--brand-bright) for both the brand/interactive accent and the \"healthy\" semantic reading. That collision \u2014 a primary button and a \"this account is fine\" badge reading as the same color \u2014 made the product feel generic and was deliberately split: brand/interactive actions now route through a dedicated Brand Indigo accent, while Green is reserved purely for semantic healthy/confirmed status. The former One Font Rule (Inter for the entire hierarchy) has similarly been superseded by a three-part type system.\n\nThe voice is calm and clinical: dense data surfaces (KPI grids, sortable tables, drawers packed with contract detail) rendered with soft ambient shadows, restrained 8\u201316px radii, and a small, deliberate type system (display / mono-stat / body) carrying the hierarchy. Motion is present but purposeful \u2014 spring-eased panels, staggered card fade-ups, a pulsing dot on live status \u2014 never decorative for its own sake. The system supports full light/dark theming through CSS custom properties; almost every surface, text, and accent color routes through a var(--token) rather than a literal value.",
+    "overview": "RetainIQ's interface is an instrument panel for catching account risk before it becomes churn, not a decorative CRM shell. Every recurring visual device \u2014 the pulsing live-status dot, the risk gauge, the color-coded journey stages \u2014 exists to answer one question at a glance: is this account fine, or does it need a call today. Amber and Red are reserved for escalating alarm, and Green is reserved for the confirmed/all-clear reading \u2014 that reservation is the entire point of the palette.\n\nRevision note (Visualization v2): the system originally used one green (--cyan/--brand-bright) for both the brand/interactive accent and the \"healthy\" semantic reading. That collision \u2014 a primary button and a \"this account is fine\" badge reading as the same color \u2014 made the product feel generic and was deliberately split: brand/interactive actions now route through a dedicated Brand Emerald accent, while Green is reserved purely for semantic healthy/confirmed status. The former One Font Rule (Inter for the entire hierarchy) has similarly been superseded by a three-part type system.\n\nThe voice is calm and clinical: dense data surfaces (KPI grids, sortable tables, drawers packed with contract detail) rendered with soft ambient shadows, restrained 8\u201316px radii, and a small, deliberate type system (display / mono-stat / body) carrying the hierarchy. Motion is present but purposeful \u2014 spring-eased panels, staggered card fade-ups, a pulsing dot on live status \u2014 never decorative for its own sake. The system supports full light/dark theming through CSS custom properties; almost every surface, text, and accent color routes through a var(--token) rather than a literal value.",
     "keyCharacteristics": [
       "A three-part type system: Space Grotesk for page titles/display, JetBrains Mono (tabular figures) for stat-card numbers, Inter for everything else.",
-      "Brand Indigo (--cyan/--brand-bright) as the interactive accent, kept distinct from Green (the healthy/confirmed semantic reading) and from Amber/Red (escalating risk).",
+      "Brand Emerald (--cyan/--brand-bright) as the interactive accent, kept distinct from Green (the healthy/confirmed semantic reading) and from Amber/Red (escalating risk).",
       "Flat-by-default surfaces with soft ambient shadows at rest, deeper directional shadows on overlays.",
       "Small, consistent radii (6\u201316px) plus a 999px pill for filters and status pills \u2014 no sharp corners, no heavy rounding.",
       "Full light/dark theming via CSS custom properties, with a brighter accent variant (--brand-bright) swapped in for dark mode where the flat brand color would go flat against a dark surface."
@@ -312,12 +312,12 @@
       },
       {
         "name": "The Bright Variant Rule",
-        "body": "Dark theme doesn't just invert lightness \u2014 where the flat brand accent (--cyan, #3452c4) would read flat against a dark surface, dark mode swaps in a distinct brighter token (--brand-bright, #96A3FF) for foregrounded uses like active nav text and the logo.",
+        "body": "Dark theme doesn't just invert lightness \u2014 where the flat brand accent (--cyan, #0b7a4c) would read flat against a dark surface, dark mode swaps in a distinct brighter token (--brand-bright, #5ed9a3) for foregrounded uses like active nav text and the logo.",
         "section": "colors"
       },
       {
         "name": "The Brand/Status Separation Rule",
-        "body": "--cyan/--brand-bright (Brand Indigo) marks interactive elements \u2014 anything clickable, active, or focused. --green (Confirmed Green) marks semantic healthy/confirmed status. The two must never be the same hue: a new component reaching for \"the accent color\" needs to first ask whether it's marking an action (brand indigo) or a status (matching semantic color).",
+        "body": "--cyan/--brand-bright (Brand Emerald) marks interactive elements \u2014 anything clickable, active, or focused. --green (Confirmed Green) marks semantic healthy/confirmed status. The two must never be the same hue: a new component reaching for \"the accent color\" needs to first ask whether it's marking an action (brand emerald) or a status (matching semantic color).",
         "section": "colors"
       },
       {
@@ -344,7 +344,7 @@
     "dos": [
       "Do route every color through the existing CSS custom-property tokens (var(--bg), var(--cyan), var(--text2), etc.) so new UI themes automatically between light and dark.",
       "Do use --brand-bright instead of --cyan for any element foregrounded on a dark surface (active nav, logo mark), per the Bright Variant Rule.",
-      "Do keep --cyan/--brand-bright (Brand Indigo) for interactive elements and --green (Confirmed Green) for semantic healthy status, never the reverse, per the Brand/Status Separation Rule.",
+      "Do keep --cyan/--brand-bright (Brand Emerald) for interactive elements and --green (Confirmed Green) for semantic healthy status, never the reverse, per the Brand/Status Separation Rule.",
       "Do reserve Amber/Red exclusively for At-Risk / Critical-Expired states, per the Reserved Alarm Rule.",
       "Do give overlay surfaces (drawers, side panels, modals) a shadow directional to the edge they emerge from; give modals an omnidirectional shadow instead.",
       "Do follow the inline-style + CSS-variable pattern already used in every pages/ and components/ file for new UI \u2014 that is the actual, active design system.",

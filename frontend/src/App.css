@@ -12,11 +12,12 @@
   --hover2:      #dedacf;
   --border:      #ddd8cc;
   --border2:     #ccc7b9;
-  /* Brand/interactive accent — deliberately distinct hue from the semantic
-     status colors below, so "primary action" never reads as "healthy". */
-  --cyan:        #3452c4;
-  --cyan-dim:    rgba(52,82,196,0.10);
-  --brand-bright:#3452c4;
+  /* Brand/interactive accent — a vivid emerald built from the product's
+     original green, kept a distinct tone (not hue-twin) of the semantic
+     status green below, so "primary action" never reads as "healthy". */
+  --cyan:        #0b7a4c;
+  --cyan-dim:    rgba(11,122,76,0.10);
+  --brand-bright:#0b7a4c;
   --logo-text:   #2a2a28;
   --amber:       #b8740f;
   --red:         #c0392b;
@@ -45,9 +46,9 @@
   --hover2:      #363339;
   --border:      #3b3841;
   --border2:     #47434c;
-  --cyan:        #7c8cf0;
-  --cyan-dim:    rgba(124,140,240,0.16);
-  --brand-bright:#96A3FF;
+  --cyan:        #1fa374;
+  --cyan-dim:    rgba(31,163,116,0.16);
+  --brand-bright:#5ed9a3;
   --logo-text:   #FAF9F5;
   --amber:       #c29a38;
   --red:         #d94c4c;
