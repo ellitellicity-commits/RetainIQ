@@ -9,8 +9,8 @@ from datetime import datetime, date
 load_dotenv()
 
 # Explicit, tight bound instead of the SDK's defaults -- see the matching
-# comment in app.py's generate_template_email for why this matters under a
-# single-gunicorn-worker deployment.
+# comment in app.py's generate_template_email for why this matters: each
+# gunicorn worker (see Procfile) only handles one request at a time.
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"), timeout=10.0, max_retries=1)
 
 KNOWN_FIELDS = {

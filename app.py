@@ -85,9 +85,10 @@ def generate_template_email(name, plan, spend, days_no_contact, risk_score, days
     try:
         # Explicit, tight bound instead of the SDK's defaults (connect=5s,
         # read/write/pool=60s each, retried up to 2x -- worst case ~195s of
-        # a single-request block). Production runs one gunicorn sync worker,
-        # so an unbounded external call here can stall every other endpoint
-        # behind it for as long as Groq takes to respond or fail.
+        # a single-request block). Each gunicorn worker handles one request
+        # at a time (see Procfile), so an unbounded external call here would
+        # stall every other request that lands on the same worker for as
+        # long as Groq takes to respond or fail.
         client = Groq(api_key=os.environ.get("GROQ_API_KEY"), timeout=10.0, max_retries=1)
 
         urgency = "CRITICAL - contract has expired" if days_until_expiry and days_until_expiry < 0 else f"expiring in {days_until_expiry} days" if days_until_expiry and days_until_expiry <= 30 else f"expiring in {days_until_expiry} days" if days_until_expiry else "approaching renewal"
@@ -472,10 +473,10 @@ def reset_data():
     ensure_model_loaded()
     return jsonify({"success": True})
 
-@app.route("/api/db/clients")
-@require_auth
-@cache_response("clients")
-def get_db_clients():
+def _compute_clients_data():
+    """The actual query+shaping logic, split out from the route so
+    chatbot_api.build_context() can call it directly instead of going
+    through test_client() -- see the comment there for why."""
     from datetime import datetime
     conn = get_db()
     try:
@@ -555,9 +556,16 @@ def get_db_clients():
     return clients
 
 
-@app.route("/api/db/stats")
+@app.route("/api/db/clients")
 @require_auth
-def get_db_stats():
+@cache_response("clients")
+def get_db_clients():
+    return _compute_clients_data()
+
+
+def _compute_stats_data():
+    """Split out from the route for the same reason as _compute_clients_data
+    above -- a direct-call path for build_context()."""
     from datetime import datetime
     conn = get_db()
     try:
@@ -603,7 +611,7 @@ def get_db_stats():
         except:
             pass
 
-    return jsonify({
+    return {
         "total_customers": total,
         "high_risk_count": expired + critical,
         "medium_risk_count": at_risk,
@@ -617,7 +625,13 @@ def get_db_stats():
             "At-Risk": at_risk,
             "Active": active
         }
-    })
+    }
+
+
+@app.route("/api/db/stats")
+@require_auth
+def get_db_stats():
+    return jsonify(_compute_stats_data())
 
 
 @app.route("/api/db/retention-history")

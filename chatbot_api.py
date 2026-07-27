@@ -19,11 +19,11 @@ EXTERNAL_CALL_TIMEOUT_SECONDS = 6.0
 # calls is individually bounded (EXTERNAL_CALL_TIMEOUT_SECONDS), but a
 # web_search request can chain three of them sequentially, and their worst
 # cases were never summed -- that's what caused the production hang this
-# budget fixes. Production runs a single gunicorn sync worker with a 30s
-# worker timeout and WEB_CONCURRENCY=1, so if this handler runs long enough
-# for gunicorn to kill and respawn the worker, every other request queued
-# behind it stalls for the full kill+respawn window, not just this one. Stay
-# comfortably under 30s so we always return a clean response ourselves first.
+# budget fixes. Production runs gunicorn with a 30s worker timeout (see
+# Procfile); even with multiple workers, a handler that runs long enough for
+# gunicorn to kill and respawn its worker stalls every request that landed on
+# that same worker for the full kill+respawn window. Stay comfortably under
+# 30s so we always return a clean response ourselves first.
 # Next person adding call #4 to this route: re-check this sum still holds.
 CHATBOT_REQUEST_BUDGET_SECONDS = 20.0
 
@@ -153,12 +153,20 @@ def _forward_auth_header():
 
 
 def build_context():
-    client = current_app.test_client()
-    auth_headers = _forward_auth_header()
+    # Runs on every chatbot message, so it used to hit its own routes via
+    # test_client() -- an extra request-dispatch layer (auth re-check,
+    # nested request context, JSON round-trip) for data this same
+    # already-authenticated request is entitled to read directly. Calling
+    # the underlying data functions in-process removes that layer; it isn't
+    # what caused the production hang (test_client() dispatches in-process,
+    # it doesn't consume a second gunicorn worker), but it's one less moving
+    # part in the request path that runs unconditionally on every message.
+    from app import _compute_stats_data, _compute_clients_data
+    from activities_api import compute_activities_data
 
-    stats = client.get("/api/db/stats", headers=auth_headers).get_json() or {}
-    all_clients = client.get("/api/db/clients", headers=auth_headers).get_json() or []
-    activities = client.get("/api/db/activities", headers=auth_headers).get_json() or []
+    stats = _compute_stats_data() or {}
+    all_clients = _compute_clients_data() or []
+    activities = compute_activities_data() or []
 
     at_risk = [c for c in all_clients if c.get("journey_stage") in ("Critical", "At-Risk", "Expired")]
     at_risk.sort(key=lambda c: (c.get("days_until_expiry") if c.get("days_until_expiry") is not None else 9999))

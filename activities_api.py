@@ -117,21 +117,20 @@ def log_activity(client_id, type, notes=None, done_by=None, date_=None, notif_me
     return activity_id
 
 
-@activities_bp.route("/api/db/activities", methods=["GET"])
-@require_auth
-def list_activities():
-    cid = request.args.get("client_id")
+def compute_activities_data(client_id=None):
+    """Split out from the route so chatbot_api.build_context() can call this
+    directly instead of routing through test_client()."""
     conn = get_conn()
     try:
-        if cid is not None:
+        if client_id is not None:
             rows = conn.execute(
-                f"SELECT * FROM {TABLE} WHERE client_id = ? ORDER BY date DESC, id DESC", (cid,)
+                f"SELECT * FROM {TABLE} WHERE client_id = ? ORDER BY date DESC, id DESC", (client_id,)
             ).fetchall()
         else:
             rows = conn.execute(f"SELECT * FROM {TABLE} ORDER BY date DESC, id DESC LIMIT 100").fetchall()
     finally:
         conn.close()
-    return jsonify([
+    return [
         {
             "id": r["id"],
             "clientId": r["client_id"],
@@ -143,7 +142,13 @@ def list_activities():
             "user": r["done_by"],
         }
         for r in rows
-    ])
+    ]
+
+
+@activities_bp.route("/api/db/activities", methods=["GET"])
+@require_auth
+def list_activities():
+    return jsonify(compute_activities_data(request.args.get("client_id")))
 
 
 @activities_bp.route("/api/db/activities", methods=["POST"])
