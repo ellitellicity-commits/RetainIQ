@@ -314,7 +314,7 @@ All create forms follow the same pattern:
 ## Deployment
 
 The app is configured for Render deployment:
-- Backend: `gunicorn app:app` (in requirements.txt)
+- Backend: `gunicorn app:app --workers 3 --timeout 30 --bind 0.0.0.0:$PORT` (see `Procfile`; gunicorn itself is in requirements.txt). Must run with more than one worker -- a single worker means one slow/hung request (or one that runs into the 30s worker timeout) blocks every other request, including on completely unrelated routes, for as long as it takes to resolve. **This Start Command must be set explicitly in the Render dashboard** (Render does not auto-detect a Procfile for an existing manually-created Web Service) -- if the dashboard's Start Command still reads just `gunicorn app:app` (the pre-existing single-worker default), update it to match.
 - Frontend: `npm run build` produces static files in `frontend/build/`
 - Database: SQLite file resets on each Render free-tier deploy (seeded automatically)
 - API URL switches between localhost and Render URL based on `window.location.hostname`
