@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import CountUp from "../components/CountUp";
 import { cardHoverProps } from "../utils/cardHover";
-import { authHeaders } from "../utils/api";
+import { authHeaders, cachedGetJson } from "../utils/api";
 import useBreakpoint from "../hooks/useBreakpoint";
 
 const fmtMoney = (v) => "$" + Number(v || 0).toLocaleString();
@@ -35,7 +35,7 @@ export default function Dashboard({ API }) {
 
   useEffect(() => {
     fetch(`${API}/api/db/stats`, { headers: authHeaders() }).then(r => r.json()).then(setStats);
-    fetch(`${API}/api/db/clients`, { headers: authHeaders() }).then(r => r.json()).then(setCustomers);
+    cachedGetJson(`${API}/api/db/clients`).then(setCustomers);
   }, [API]);
 
   if (!stats) return (

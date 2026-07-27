@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { authHeaders } from "../utils/api";
+import { authHeaders, invalidateCache } from "../utils/api";
 
 export default function Upload({ onUpload, onSkip, API, onCancel }) {
   const [dragging, setDragging] = useState(false);
@@ -31,6 +31,7 @@ export default function Upload({ onUpload, onSkip, API, onCancel }) {
         setError(data.error);
         setLoading(false);
       } else {
+        invalidateCache("clients");
         onUpload();
       }
     } catch (e) {

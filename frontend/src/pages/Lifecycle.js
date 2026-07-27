@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { authHeaders } from "../utils/api";
+import { cachedGetJson } from "../utils/api";
 
 function getSteps(customer) {
   const score = customer.churn_risk_score;
@@ -131,7 +131,7 @@ export default function Lifecycle({ API }) {
   const pillsRef = useRef(null);
 
   useEffect(() => {
-    fetch(`${API}/api/db/clients`, { headers: authHeaders() }).then(r => r.json()).then(setCustomers);
+    cachedGetJson(`${API}/api/db/clients`).then(setCustomers);
   }, [API]);
 
   useEffect(() => { setActiveStep(0); }, [currentIndex]);

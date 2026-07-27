@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Cell, LabelList, ReferenceDot,
 } from "recharts";
 import CountUp from "../components/CountUp";
 import { cardHoverProps } from "../utils/cardHover";
-import { authHeaders } from "../utils/api";
+import { cachedGetJson } from "../utils/api";
 import useBreakpoint from "../hooks/useBreakpoint";
 
 const PROB = { "New Leads": 0.10, "Qualified": 0.25, "Demo": 0.40, "Quote sent": 0.60, "Negotiation": 0.80 };
@@ -78,79 +78,91 @@ export default function Analytics({ API }) {
   const [horizon, setHorizon] = useState("3");
 
   useEffect(() => {
-    fetch(`${API}/api/db/deals`, { headers: authHeaders() }).then(r => r.json()).then(setDeals).catch(() => setDeals([]));
+    cachedGetJson(`${API}/api/db/deals`).then(setDeals).catch(() => setDeals([]));
   }, [API]);
 
   useEffect(() => {
-    fetch(`${API}/api/db/clients`, { headers: authHeaders() }).then(r => r.json()).then(d => setClients(Array.isArray(d) ? d : [])).catch(() => setClients([]));
+    cachedGetJson(`${API}/api/db/clients`).then(d => setClients(Array.isArray(d) ? d : [])).catch(() => setClients([]));
   }, [API]);
 
   useEffect(() => {
-    fetch(`${API}/api/db/retention-history?months=${horizon}`, { headers: authHeaders() }).then(r => r.json()).then(setRetention).catch(() => setRetention([]));
+    cachedGetJson(`${API}/api/db/retention-history?months=${horizon}`).then(setRetention).catch(() => setRetention([]));
   }, [API, horizon]);
 
-  const open = deals.filter(d => d.status === "open");
-  const won = deals.filter(d => d.status === "won");
-  const lost = deals.filter(d => d.status === "lost");
+  const {
+    pipelineValue, weighted, winRate, avgDeal, conv, hM, months, fcShades,
+    hasForecast, maxMonth, funnel, funnelShades, retentionYDomain, inflection,
+    reps, maxRep, maxFunnel, wonLength, lostLength,
+  } = useMemo(() => {
+    const open = deals.filter(d => d.status === "open");
+    const won = deals.filter(d => d.status === "won");
+    const lost = deals.filter(d => d.status === "lost");
 
-  const pipelineValue = open.reduce((s, d) => s + (d.value || 0), 0);
-  const weighted = open.reduce((s, d) => s + (d.value || 0) * (PROB[d.stage] || 0), 0);
-  const winRate = (won.length + lost.length) > 0 ? Math.round(won.length / (won.length + lost.length) * 100) : 0;
-  const avgDeal = deals.length ? deals.reduce((s, d) => s + (d.value || 0), 0) / deals.length : 0;
-  const conv = deals.length ? Math.round(won.length / deals.length * 100) : 0;
+    const pipelineValue = open.reduce((s, d) => s + (d.value || 0), 0);
+    const weighted = open.reduce((s, d) => s + (d.value || 0) * (PROB[d.stage] || 0), 0);
+    const winRate = (won.length + lost.length) > 0 ? Math.round(won.length / (won.length + lost.length) * 100) : 0;
+    const avgDeal = deals.length ? deals.reduce((s, d) => s + (d.value || 0), 0) / deals.length : 0;
+    const conv = deals.length ? Math.round(won.length / deals.length * 100) : 0;
 
-  const hM = horizon === "3" ? 3 : horizon === "6" ? 6 : 12;
-  const now = new Date();
-  const months = [];
-  for (let i = 0; i < hM; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    months.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: d.toLocaleDateString("en-US", { month: "short" }), total: 0 });
-  }
-  open.forEach(d => {
-    if (!d.expected_close_date) return;
-    const k = String(d.expected_close_date).slice(0, 7);
-    const m = months.find(x => x.key === k);
-    if (m) m.total += (d.value || 0) * (PROB[d.stage] || 0);
-  });
-  const fcShades = ["#3B6D11", "#4d8016", "#639922", "#7DB037", "#97C459", "#b0d36f"];
-  const hasForecast = months.some(m => m.total > 0);
-  const maxMonth = Math.max(1, ...months.map(m => m.total));
+    const hM = horizon === "3" ? 3 : horizon === "6" ? 6 : 12;
+    const now = new Date();
+    const months = [];
+    for (let i = 0; i < hM; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      months.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: d.toLocaleDateString("en-US", { month: "short" }), total: 0 });
+    }
+    open.forEach(d => {
+      if (!d.expected_close_date) return;
+      const k = String(d.expected_close_date).slice(0, 7);
+      const m = months.find(x => x.key === k);
+      if (m) m.total += (d.value || 0) * (PROB[d.stage] || 0);
+    });
+    const fcShades = ["#3B6D11", "#4d8016", "#639922", "#7DB037", "#97C459", "#b0d36f"];
+    const hasForecast = months.some(m => m.total > 0);
+    const maxMonth = Math.max(1, ...months.map(m => m.total));
 
-  const funnel = OPEN_STAGES.map(st => { const ds = open.filter(d => d.stage === st); return { name: st, n: ds.length, value: ds.reduce((s, d) => s + (d.value || 0), 0) }; });
-  const funnelShades = ["var(--cyan)", "#1D9E75", "#3DB390", "#5DCAA5", "var(--brand-bright)"];
+    const funnel = OPEN_STAGES.map(st => { const ds = open.filter(d => d.stage === st); return { name: st, n: ds.length, value: ds.reduce((s, d) => s + (d.value || 0), 0) }; });
+    const funnelShades = ["var(--cyan)", "#1D9E75", "#3DB390", "#5DCAA5", "var(--brand-bright)"];
 
-  // Rescale to the real data range (not a flat 0-100) so the true variation is visible.
-  const retentionVals = retention.map(r => r.retention_pct);
-  const minRetention = retentionVals.length ? Math.min(...retentionVals) : 0;
-  const maxRetention = retentionVals.length ? Math.max(...retentionVals) : 100;
-  const retentionYDomain = [
-    Math.max(0, Math.floor((minRetention - 5) / 5) * 5),
-    Math.min(100, Math.ceil((maxRetention + 5) / 5) * 5),
-  ];
+    // Rescale to the real data range (not a flat 0-100) so the true variation is visible.
+    const retentionVals = retention.map(r => r.retention_pct);
+    const minRetention = retentionVals.length ? Math.min(...retentionVals) : 0;
+    const maxRetention = retentionVals.length ? Math.max(...retentionVals) : 100;
+    const retentionYDomain = [
+      Math.max(0, Math.floor((minRetention - 5) / 5) * 5),
+      Math.min(100, Math.ceil((maxRetention + 5) / 5) * 5),
+    ];
 
-  // Inflection annotation: which of the shown months had the most contract
-  // expirations, computed from real client data (not fabricated) -- only
-  // called out when it's actually a meaningful cluster (2+).
-  const expiredByMonth = {};
-  clients.forEach(c => {
-    if (!c.contract_expiry) return;
-    if (c.journey_stage !== "Expired" && c.journey_stage !== "Critical") return;
-    const d = new Date(c.contract_expiry);
-    if (isNaN(d)) return;
-    const k = monthKey(d);
-    expiredByMonth[k] = (expiredByMonth[k] || 0) + 1;
-  });
-  let inflection = null;
-  retention.forEach(r => {
-    const n = expiredByMonth[r.month] || 0;
-    if (n >= 2 && (!inflection || n > inflection.n)) inflection = { month: r.month, n, retention_pct: r.retention_pct };
-  });
+    // Inflection annotation: which of the shown months had the most contract
+    // expirations, computed from real client data (not fabricated) -- only
+    // called out when it's actually a meaningful cluster (2+).
+    const expiredByMonth = {};
+    clients.forEach(c => {
+      if (!c.contract_expiry) return;
+      if (c.journey_stage !== "Expired" && c.journey_stage !== "Critical") return;
+      const d = new Date(c.contract_expiry);
+      if (isNaN(d)) return;
+      const k = monthKey(d);
+      expiredByMonth[k] = (expiredByMonth[k] || 0) + 1;
+    });
+    let inflection = null;
+    retention.forEach(r => {
+      const n = expiredByMonth[r.month] || 0;
+      if (n >= 2 && (!inflection || n > inflection.n)) inflection = { month: r.month, n, retention_pct: r.retention_pct };
+    });
 
-  const byOwner = {};
-  open.forEach(d => { const o = d.owner || "Unassigned"; byOwner[o] = (byOwner[o] || 0) + (d.value || 0); });
-  const reps = Object.entries(byOwner).map(([owner, val]) => ({ owner, val })).sort((a, b) => b.val - a.val);
-  const maxRep = Math.max(1, ...reps.map(r => r.val));
-  const maxFunnel = Math.max(1, ...funnel.map(f => f.value));
+    const byOwner = {};
+    open.forEach(d => { const o = d.owner || "Unassigned"; byOwner[o] = (byOwner[o] || 0) + (d.value || 0); });
+    const reps = Object.entries(byOwner).map(([owner, val]) => ({ owner, val })).sort((a, b) => b.val - a.val);
+    const maxRep = Math.max(1, ...reps.map(r => r.val));
+    const maxFunnel = Math.max(1, ...funnel.map(f => f.value));
+
+    return {
+      pipelineValue, weighted, winRate, avgDeal, conv, hM, months, fcShades,
+      hasForecast, maxMonth, funnel, funnelShades, retentionYDomain, inflection,
+      reps, maxRep, maxFunnel, wonLength: won.length, lostLength: lost.length,
+    };
+  }, [deals, clients, retention, horizon]);
 
   const kpis = [
     { label: "Pipeline value", value: pipelineValue, format: fmtBig, color: "var(--text)" },
@@ -161,8 +173,8 @@ export default function Analytics({ API }) {
 
   const metrics = [
     ["Opportunities created", String(deals.length), "var(--text)"],
-    ["Won deals", String(won.length), "#97C459"],
-    ["Lost deals", String(lost.length), "#d98c8c"],
+    ["Won deals", String(wonLength), "#97C459"],
+    ["Lost deals", String(lostLength), "#d98c8c"],
     ["Conversion rate", conv + "%", "var(--text)"],
     ["Avg deal size", fmtBig(avgDeal), "var(--text)"],
   ];

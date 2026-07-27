@@ -6,7 +6,7 @@ import ActivityTimeline from "../components/ActivityTimeline";
 import NoteEditor from "../components/NoteEditor";
 import DataTable from "../components/DataTable";
 import { NOTES } from "../data/mockData";
-import { authHeaders } from "../utils/api";
+import { authHeaders, cachedGetJson } from "../utils/api";
 import useBreakpoint from "../hooks/useBreakpoint";
 
 const fmtMoney = (v) =>
@@ -74,7 +74,7 @@ export default function Clients({ API, pageAction, clearAction, isGuest }) {
   const [detailsSubTab, setDetailsSubTab] = useState("overview");
 
   useEffect(() => {
-    fetch(`${API}/api/db/clients`, { headers: authHeaders() }).then(r => r.json()).then(setClients).catch(() => setClients([]));
+    cachedGetJson(`${API}/api/db/clients`).then(setClients).catch(() => setClients([]));
   }, [API]);
 
   useEffect(() => {
@@ -91,56 +91,62 @@ export default function Clients({ API, pageAction, clearAction, isGuest }) {
 
   const nameOf = (c) => c.company_name || c.client_name || "—";
 
-  let list = clients.filter(c => {
-    if (filter === "critical") return c.journey_stage === "Expired" || c.journey_stage === "Critical";
-    if (filter === "atrisk")   return c.journey_stage === "At-Risk";
-    if (filter === "healthy")  return c.journey_stage === "Active";
-    return true;
-  });
-
-  if (search.trim()) {
-    const q = search.toLowerCase();
-    list = list.filter(c =>
-      nameOf(c).toLowerCase().includes(q) ||
-      (c.software || "").toLowerCase().includes(q) ||
-      (c.vendor || "").toLowerCase().includes(q) ||
-      (c.account_manager || "").toLowerCase().includes(q)
-    );
-  }
-
-  const parseNum = (x) => {
-    if (x === null || x === undefined || x === "") return null;
-    const n = Number(String(x).replace(/[^0-9.-]/g, ""));
-    return isNaN(n) ? null : n;
-  };
-  const min = parseNum(minValue);
-  const max = parseNum(maxValue);
-  if (min != null || max != null) {
-    list = list.filter(c => {
-      const v = parseNum(c.contract_value) ?? 0;
-      if (min != null && v < min) return false;
-      if (max != null && v > max) return false;
+  // Customers.js carries a lot of unrelated UI state (drawer tabs, forms,
+  // note editors, email drafts) -- without memoizing, every one of those
+  // updates re-runs this filter/sort chain over the full client list even
+  // though none of them touch search/filter/sort inputs.
+  const list = useMemo(() => {
+    let l = clients.filter(c => {
+      if (filter === "critical") return c.journey_stage === "Expired" || c.journey_stage === "Critical";
+      if (filter === "atrisk")   return c.journey_stage === "At-Risk";
+      if (filter === "healthy")  return c.journey_stage === "Active";
       return true;
     });
-  }
 
-  if (renewWithin !== "any") {
-    list = list.filter(c => {
-      const d = c.days_until_expiry;
-      if (d == null) return false;
-      if (renewWithin === "expired") return d < 0;
-      return d >= 0 && d <= Number(renewWithin);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      l = l.filter(c =>
+        nameOf(c).toLowerCase().includes(q) ||
+        (c.software || "").toLowerCase().includes(q) ||
+        (c.vendor || "").toLowerCase().includes(q) ||
+        (c.account_manager || "").toLowerCase().includes(q)
+      );
+    }
+
+    const parseNum = (x) => {
+      if (x === null || x === undefined || x === "") return null;
+      const n = Number(String(x).replace(/[^0-9.-]/g, ""));
+      return isNaN(n) ? null : n;
+    };
+    const min = parseNum(minValue);
+    const max = parseNum(maxValue);
+    if (min != null || max != null) {
+      l = l.filter(c => {
+        const v = parseNum(c.contract_value) ?? 0;
+        if (min != null && v < min) return false;
+        if (max != null && v > max) return false;
+        return true;
+      });
+    }
+
+    if (renewWithin !== "any") {
+      l = l.filter(c => {
+        const d = c.days_until_expiry;
+        if (d == null) return false;
+        if (renewWithin === "expired") return d < 0;
+        return d >= 0 && d <= Number(renewWithin);
+      });
+    }
+
+    return [...l].sort((a, b) => {
+      if (sortKey === "value")  return (b.contract_value || 0) - (a.contract_value || 0);
+      if (sortKey === "name")   return nameOf(a).localeCompare(nameOf(b));
+      if (sortKey === "status") return (b.churn_risk_score || 0) - (a.churn_risk_score || 0);
+      const av = a.days_until_expiry == null ? 99999 : a.days_until_expiry;
+      const bv = b.days_until_expiry == null ? 99999 : b.days_until_expiry;
+      return av - bv;
     });
-  }
-
-  list = [...list].sort((a, b) => {
-    if (sortKey === "value")  return (b.contract_value || 0) - (a.contract_value || 0);
-    if (sortKey === "name")   return nameOf(a).localeCompare(nameOf(b));
-    if (sortKey === "status") return (b.churn_risk_score || 0) - (a.churn_risk_score || 0);
-    const av = a.days_until_expiry == null ? 99999 : a.days_until_expiry;
-    const bv = b.days_until_expiry == null ? 99999 : b.days_until_expiry;
-    return av - bv;
-  });
+  }, [clients, filter, search, minValue, maxValue, renewWithin, sortKey]);
 
   const clearFilters = () => {
     setSearch(""); setFilter("all"); setRenewWithin("any"); setMinValue(""); setMaxValue("");

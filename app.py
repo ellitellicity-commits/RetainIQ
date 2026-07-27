@@ -1,5 +1,7 @@
 import os
 import random
+import time
+from functools import wraps
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from model import load_and_train, get_dataframe, score_new_customer, _assign_stage
@@ -30,6 +32,36 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CSV_PATH = os.path.join(BASE_DIR, "clients.csv")
+
+# Short-TTL in-process cache for read-heavy, slow-changing endpoints (the
+# client list, the retention-history aggregate). Several frontend pages hit
+# these independently within the same short window, and both do a JOIN plus
+# a Python post-processing pass per request -- caching the computed payload
+# for a few seconds avoids repeating that work for every one of those hits,
+# while staying well within how fresh this data actually needs to be. auth
+# (@require_auth) always sits outside the cache, so caching never bypasses it.
+_response_cache = {}
+CACHE_TTL_SECONDS = 20
+
+
+def cache_response(key, ttl_seconds=CACHE_TTL_SECONDS):
+    def decorator(fn):
+        @wraps(fn)
+        def wrapped(*args, **kwargs):
+            now = time.time()
+            cached = _response_cache.get(key)
+            if cached and cached[0] > now:
+                return jsonify(cached[1])
+            data = fn(*args, **kwargs)
+            _response_cache[key] = (now + ttl_seconds, data)
+            return jsonify(data)
+        return wrapped
+    return decorator
+
+
+def invalidate_cached_response(key):
+    _response_cache.pop(key, None)
+
 
 model_loaded = False
 
@@ -442,6 +474,7 @@ def reset_data():
 
 @app.route("/api/db/clients")
 @require_auth
+@cache_response("clients")
 def get_db_clients():
     from datetime import datetime
     conn = get_db()
@@ -518,8 +551,8 @@ def get_db_clients():
                 row['journey_stage'] = "Unknown"
         
         clients.append(row)
-    
-    return jsonify(clients)
+
+    return clients
 
 
 @app.route("/api/db/stats")
@@ -592,6 +625,13 @@ def get_db_stats():
 def get_retention_history():
     from datetime import datetime
 
+    months_param = request.args.get("months", "3")
+    cache_key = f"retention-history:{months_param}"
+    now = time.time()
+    cached = _response_cache.get(cache_key)
+    if cached and cached[0] > now:
+        return jsonify(cached[1])
+
     conn = get_db()
     try:
         # Defensive daily check: cheap no-op if today's row already exists,
@@ -606,7 +646,6 @@ def get_retention_history():
     finally:
         conn.close()
 
-    months_param = request.args.get("months", "3")
     n = {"3": 3, "6": 6, "12": 12}.get(months_param, 3)
 
     # Bucket by calendar month, keeping the latest snapshot per month
@@ -623,6 +662,7 @@ def get_retention_history():
         {"month": by_month[k][0].strftime("%b '%y"), "retention_pct": round(by_month[k][1], 1)}
         for k in ordered_keys
     ]
+    _response_cache[cache_key] = (now + CACHE_TTL_SECONDS, result)
     return jsonify(result)
 
 
@@ -647,6 +687,7 @@ def import_data():
             result = import_file(tmp.name)
         
         os.unlink(tmp.name)
+        invalidate_cached_response("clients")
         return jsonify({"success": True, "imported": result['imported'], "mapping": result['mapping']})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

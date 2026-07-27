@@ -1,23 +1,27 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import Upload from "./pages/Upload";
-import Customers from "./pages/Customers";
-import Contacts from "./pages/Contacts";
-import Alerts from "./pages/Alerts";
-import Journey from "./pages/Journey";
-import Quotes from "./pages/Quotes";
-import CopilotPage from "./pages/CopilotPage";
-import Tasks from "./pages/Tasks";
-import EmailSequences from "./pages/EmailSequences";
-import Automations from "./pages/Automations";
 import CommandPalette from "./components/CommandPalette";
 import NotificationCenter from "./components/NotificationCenter";
 import ChatWidget from "./components/ChatWidget";
 import PageTransition from "./components/PageTransition";
 import useBreakpoint from "./hooks/useBreakpoint";
 import "./App.css";
+
+// Lazy-loaded: each of these only needs to download once the user actually
+// navigates there, instead of every page's code shipping in the bundle the
+// browser has to parse before the first (Login/Dashboard) paint.
+const Upload = lazy(() => import("./pages/Upload"));
+const Customers = lazy(() => import("./pages/Customers"));
+const Contacts = lazy(() => import("./pages/Contacts"));
+const Alerts = lazy(() => import("./pages/Alerts"));
+const Journey = lazy(() => import("./pages/Journey"));
+const Quotes = lazy(() => import("./pages/Quotes"));
+const CopilotPage = lazy(() => import("./pages/CopilotPage"));
+const Tasks = lazy(() => import("./pages/Tasks"));
+const EmailSequences = lazy(() => import("./pages/EmailSequences"));
+const Automations = lazy(() => import("./pages/Automations"));
 
 const API =
   window.location.hostname === "localhost"
@@ -197,7 +201,13 @@ export default function App() {
     return <Login API={API} onAuthenticated={handleAuthenticated} />;
   }
 
-  if (!uploaded) return <Upload API={API} onUpload={() => setUploaded(true)} onSkip={() => setUploaded(true)} onCancel={() => setUploaded(true)} />;
+  if (!uploaded) {
+    return (
+      <Suspense fallback={<div style={{ minHeight: "100vh", background: "var(--bg)" }} />}>
+        <Upload API={API} onUpload={() => setUploaded(true)} onSkip={() => setUploaded(true)} onCancel={() => setUploaded(true)} />
+      </Suspense>
+    );
+  }
 
   const SIDEBAR_W = collapsed ? 66 : 222;
   const ghostBtn = {
@@ -367,18 +377,20 @@ export default function App() {
           <NotificationCenter API={API} isGuest={isGuest} />
         </div>
 
-        <PageTransition pageKey={page}>
-          {page === "dashboard" && <Dashboard API={API} />}
-          {page === "customers" && <Customers API={API} pageAction={pageAction} clearAction={() => setPageAction(null)} isGuest={isGuest} />}
-          {page === "contacts"  && <Contacts API={API} />}
-          {page === "journey"   && <Journey API={API} pageAction={pageAction} clearAction={() => setPageAction(null)} openDealId={openDealId} clearOpenDeal={() => setOpenDealId(null)} isGuest={isGuest} />}
-          {page === "quotes"    && <Quotes API={API} onOpenDeal={openDealInPipeline} />}
-          {page === "alerts"    && <Alerts API={API} />}
-          {page === "copilot"   && <CopilotPage API={API} onOpenDeal={openDealInPipeline} />}
-          {page === "tasks"     && <Tasks pageAction={pageAction} clearAction={() => setPageAction(null)} />}
-          {page === "sequences" && <EmailSequences />}
-          {page === "automations" && <Automations />}
-        </PageTransition>
+        <Suspense fallback={null}>
+          <PageTransition pageKey={page}>
+            {page === "dashboard" && <Dashboard API={API} />}
+            {page === "customers" && <Customers API={API} pageAction={pageAction} clearAction={() => setPageAction(null)} isGuest={isGuest} />}
+            {page === "contacts"  && <Contacts API={API} />}
+            {page === "journey"   && <Journey API={API} pageAction={pageAction} clearAction={() => setPageAction(null)} openDealId={openDealId} clearOpenDeal={() => setOpenDealId(null)} isGuest={isGuest} />}
+            {page === "quotes"    && <Quotes API={API} onOpenDeal={openDealInPipeline} />}
+            {page === "alerts"    && <Alerts API={API} />}
+            {page === "copilot"   && <CopilotPage API={API} onOpenDeal={openDealInPipeline} />}
+            {page === "tasks"     && <Tasks pageAction={pageAction} clearAction={() => setPageAction(null)} />}
+            {page === "sequences" && <EmailSequences />}
+            {page === "automations" && <Automations />}
+          </PageTransition>
+        </Suspense>
       </main>
 
       <CommandPalette open={cmdKOpen} onClose={() => setCmdKOpen(false)} onNavigate={handleCmdNavigate} />

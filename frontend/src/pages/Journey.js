@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { authHeaders } from "../utils/api";
+import { authHeaders, invalidateCache } from "../utils/api";
 import useBreakpoint from "../hooks/useBreakpoint";
 
 const STAGES = ["New Leads", "Qualified", "Demo", "Quote sent", "Negotiation", "Closed-Won", "Closed-Lost"];
@@ -105,7 +105,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
     if (!deal || deal.stage === stage) return;
     setDeals(ds => ds.map(d => d.id === id ? { ...d, stage, days_in_stage: 0, stage_updated_at: todayISO(), status: stage === "Closed-Won" ? "won" : stage === "Closed-Lost" ? "lost" : "open" } : d));
     fetch(`${API}/api/db/deals/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ stage }) })
-      .then(r => r.json()).then(u => setDeals(ds => ds.map(d => d.id === id ? u : d))).catch(() => load());
+      .then(r => r.json()).then(u => { invalidateCache("deals"); setDeals(ds => ds.map(d => d.id === id ? u : d)); }).catch(() => load());
   };
 
   const openDeal = (d) => { setSelected(d); setDraft({ ...d }); setQuoteMsg(""); loadQuote(d.id); };
@@ -118,21 +118,21 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
     const isNew = selected === "new";
     const url = isNew ? `${API}/api/db/deals` : `${API}/api/db/deals/${selected.id}`;
     fetch(url, { method: isNew ? "POST" : "PATCH", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(draft) })
-      .then(r => r.json()).then(() => { load(); close(); }).catch(() => setSaving(false));
+      .then(r => r.json()).then(() => { invalidateCache("deals"); load(); close(); }).catch(() => setSaving(false));
   };
 
   const quickStage = (stage) => {
     if (isGuest) return;
     if (selected === "new") { setDraft({ ...draft, stage }); return; }
     fetch(`${API}/api/db/deals/${selected.id}`, { method: "PATCH", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ stage }) })
-      .then(r => r.json()).then(() => { load(); close(); });
+      .then(r => r.json()).then(() => { invalidateCache("deals"); load(); close(); });
   };
 
   const del = () => {
     if (isGuest) return;
     if (selected === "new") { close(); return; }
     if (!window.confirm(`Delete the deal with ${selected.company || "this company"}? This can't be undone.`)) return;
-    fetch(`${API}/api/db/deals/${selected.id}`, { method: "DELETE", headers: authHeaders() }).then(() => { load(); close(); });
+    fetch(`${API}/api/db/deals/${selected.id}`, { method: "DELETE", headers: authHeaders() }).then(() => { invalidateCache("deals"); load(); close(); });
   };
 
   const addItem = () => setQuoteItems([...quoteItems, { description: "", quantity: 1, unit_price: 0 }]);

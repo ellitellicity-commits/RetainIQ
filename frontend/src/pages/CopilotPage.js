@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, memo } from "react";
 import gsap from "gsap";
 import RelationshipMap from "../components/RelationshipMap";
 import CountUp from "../components/CountUp";
 import { cardHoverProps } from "../utils/cardHover";
-import { authHeaders } from "../utils/api";
+import { cachedGetJson } from "../utils/api";
 import { DEAL_INSIGHTS, MEETING_PREPS, RELATIONSHIP_MAP, NEXT_BEST_ACTIONS } from "../data/mockData";
 import useBreakpoint from "../hooks/useBreakpoint";
 
@@ -47,13 +47,19 @@ function getSeverityColor(severity) {
   }
 }
 
+// DEAL_INSIGHTS is a module-level constant, so this never needs to be
+// recomputed per render -- derive it once here instead of inline in the component.
+const AVG_CONFIDENCE = Math.round(
+  (DEAL_INSIGHTS.reduce((sum, d) => sum + d.confidence, 0) / DEAL_INSIGHTS.length) * 100
+);
+
 function getWarmthLabel(warmth) {
   if (warmth > 0.7) return "warm";
   if (warmth >= 0.4) return "lukewarm";
   return "cold";
 }
 
-function DealInsightCard({ insight, matchedDeal, onOpenDeal }) {
+const DealInsightCard = memo(function DealInsightCard({ insight, matchedDeal, onOpenDeal }) {
   const [expanded, setExpanded] = useState(true);
   const fillRef = useRef(null);
   const hasAnimated = useRef(false);
@@ -123,7 +129,7 @@ function DealInsightCard({ insight, matchedDeal, onOpenDeal }) {
       )}
     </div>
   );
-}
+});
 
 export default function CopilotPage({ API, onOpenDeal }) {
   const { isMobile } = useBreakpoint();
@@ -131,22 +137,19 @@ export default function CopilotPage({ API, onOpenDeal }) {
 
   useEffect(() => {
     if (!API) return;
-    fetch(`${API}/api/db/deals`, { headers: authHeaders() }).then((r) => r.json()).then((d) => setDeals(Array.isArray(d) ? d : [])).catch(() => setDeals([]));
+    cachedGetJson(`${API}/api/db/deals`).then((d) => setDeals(Array.isArray(d) ? d : [])).catch(() => setDeals([]));
   }, [API]);
 
   const dealFor = (dealName) => deals.find((d) => (d.company || "").toLowerCase() === (dealName || "").toLowerCase());
   const [selectedMapIndex, setSelectedMapIndex] = useState(0);
   const [selectedMeetingCompany, setSelectedMeetingCompany] = useState(Object.keys(MEETING_PREPS)[0]);
 
-  const avgConfidence = Math.round(
-    (DEAL_INSIGHTS.reduce((sum, d) => sum + d.confidence, 0) / DEAL_INSIGHTS.length) * 100
-  );
-
   const selectedMapData = RELATIONSHIP_MAP[selectedMapIndex];
-  const warmCounts = { warm: 0, lukewarm: 0, cold: 0 };
-  selectedMapData.contacts.forEach((c) => {
-    warmCounts[getWarmthLabel(c.warmth)]++;
-  });
+  const warmCounts = useMemo(() => {
+    const counts = { warm: 0, lukewarm: 0, cold: 0 };
+    selectedMapData.contacts.forEach((c) => { counts[getWarmthLabel(c.warmth)]++; });
+    return counts;
+  }, [selectedMapData]);
 
   const meetingData = MEETING_PREPS[selectedMeetingCompany];
 
@@ -187,7 +190,7 @@ export default function CopilotPage({ API, onOpenDeal }) {
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 16 }}>
           <StatCard label="Active Insights" value={DEAL_INSIGHTS.length} color="var(--cyan)" />
           <StatCard label="Actions Pending" value={NEXT_BEST_ACTIONS.length} color="var(--amber)" />
-          <StatCard label="Avg Confidence" value={avgConfidence} format={(v) => Math.round(v) + "%"} color="var(--green)" />
+          <StatCard label="Avg Confidence" value={AVG_CONFIDENCE} format={(v) => Math.round(v) + "%"} color="var(--green)" />
         </div>
       </div>
 
