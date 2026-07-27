@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createColumnHelper } from "@tanstack/react-table";
 import DataTable from "../components/DataTable";
+import { authHeaders } from "../utils/api";
 
 const ctrl = { padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--card)", color: "var(--text)", fontFamily: "Inter", fontSize: 14, outline: "none" };
 const pill = { padding: "7px 16px", borderRadius: 999, fontFamily: "Inter", fontSize: 14, fontWeight: 500, cursor: "pointer" };
@@ -14,8 +15,8 @@ export default function Contacts({ API }) {
 
   useEffect(() => {
     Promise.all([
-      fetch(`${API}/api/db/contacts`).then(r => r.json()).catch(() => []),
-      fetch(`${API}/api/db/clients`).then(r => r.json()).catch(() => []),
+      fetch(`${API}/api/db/contacts`, { headers: authHeaders() }).then(r => r.json()).catch(() => []),
+      fetch(`${API}/api/db/clients`, { headers: authHeaders() }).then(r => r.json()).catch(() => []),
     ]).then(([cts, cls]) => {
       setContacts(Array.isArray(cts) ? cts : []);
       setClients(Array.isArray(cls) ? cls : []);

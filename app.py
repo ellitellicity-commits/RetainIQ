@@ -8,7 +8,7 @@ from database import get_db, init_db, seed_if_empty, ensure_todays_retention_sna
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY")
 
-from auth_api import auth_bp, block_guest
+from auth_api import auth_bp, require_auth, require_write_access
 app.register_blueprint(auth_bp)
 from contacts_api import contacts_bp
 app.register_blueprint(contacts_bp)
@@ -254,6 +254,7 @@ def render_test():
 
 
 @app.route("/api/customers")
+@require_auth
 def get_customers():
     ensure_model_loaded()
 
@@ -274,6 +275,7 @@ def get_customers():
 
 
 @app.route("/api/customers/<int:customer_id>")
+@require_auth
 def get_customer(customer_id):
     ensure_model_loaded()
 
@@ -285,6 +287,7 @@ def get_customer(customer_id):
 
 
 @app.route("/api/stats")
+@require_auth
 def get_stats():
     ensure_model_loaded()
 
@@ -319,6 +322,7 @@ def get_stats():
 
 
 @app.route("/api/alerts")
+@require_auth
 def get_alerts():
     ensure_model_loaded()
 
@@ -331,6 +335,7 @@ def get_alerts():
 
 
 @app.route("/api/journey")
+@require_auth
 def get_journey():
     ensure_model_loaded()
 
@@ -350,6 +355,7 @@ def get_journey():
 
 
 @app.route("/api/email", methods=["POST"])
+@require_auth
 def generate_email():
     ensure_model_loaded()
 
@@ -373,6 +379,7 @@ def generate_email():
 
 
 @app.route("/api/score", methods=["POST"])
+@require_auth
 def score_customer():
     ensure_model_loaded()
 
@@ -394,7 +401,7 @@ def score_customer():
 
 
 @app.route("/api/upload", methods=["POST"])
-@block_guest
+@require_write_access
 def upload_csv():
     if "file" not in request.files:
         return jsonify({"error": "No file provided"}), 400
@@ -422,7 +429,7 @@ def upload_csv():
 
 
 @app.route("/api/reset", methods=["POST"])
-@block_guest
+@require_write_access
 def reset_data():
     global model_loaded
     original = os.path.join(BASE_DIR, "customers_backup.csv")
@@ -434,6 +441,7 @@ def reset_data():
     return jsonify({"success": True})
 
 @app.route("/api/db/clients")
+@require_auth
 def get_db_clients():
     from datetime import datetime
     conn = get_db()
@@ -515,6 +523,7 @@ def get_db_clients():
 
 
 @app.route("/api/db/stats")
+@require_auth
 def get_db_stats():
     from datetime import datetime
     conn = get_db()
@@ -579,6 +588,7 @@ def get_db_stats():
 
 
 @app.route("/api/db/retention-history")
+@require_auth
 def get_retention_history():
     from datetime import datetime
 
@@ -617,7 +627,7 @@ def get_retention_history():
 
 
 @app.route("/api/db/import", methods=["POST"])
-@block_guest
+@require_write_access
 def import_data():
     if "file" not in request.files:
         return jsonify({"error": "No file provided"}), 400

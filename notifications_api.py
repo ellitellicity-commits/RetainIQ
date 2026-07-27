@@ -1,7 +1,7 @@
 import os, sqlite3
 from datetime import datetime
 from flask import Blueprint, request, jsonify
-from auth_api import block_guest
+from auth_api import require_auth, require_write_access
 
 notifications_bp = Blueprint("notifications_bp", __name__)
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "retainiq.db")
@@ -34,9 +34,10 @@ def ensure_schema():
 
 
 def create_notification(type, title, message, entity_id=None):
-    """Importable by other blueprints. This app has no real auth/session, so
-    notifications are a single global feed (user_id stays unset), consistent
-    with the rest of the app having no per-user scoping."""
+    """Importable by other blueprints. Notifications are a single global
+    feed (user_id stays unset), consistent with the rest of the app having
+    no per-user data scoping -- every authenticated user sees the same
+    feed, this just isn't reachable without a valid session anymore."""
     conn = get_conn()
     try:
         conn.execute(
@@ -49,6 +50,7 @@ def create_notification(type, title, message, entity_id=None):
 
 
 @notifications_bp.route("/api/db/notifications", methods=["GET"])
+@require_auth
 def list_notifications():
     conn = get_conn()
     try:
@@ -59,7 +61,7 @@ def list_notifications():
 
 
 @notifications_bp.route("/api/db/notifications/<int:nid>", methods=["PATCH"])
-@block_guest
+@require_write_access
 def mark_read(nid):
     conn = get_conn()
     try:
@@ -74,7 +76,7 @@ def mark_read(nid):
 
 
 @notifications_bp.route("/api/db/notifications/mark-all-read", methods=["PATCH"])
-@block_guest
+@require_write_access
 def mark_all_read():
     conn = get_conn()
     try:

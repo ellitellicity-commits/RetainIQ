@@ -3,6 +3,7 @@ import gsap from "gsap";
 import RelationshipMap from "../components/RelationshipMap";
 import CountUp from "../components/CountUp";
 import { cardHoverProps } from "../utils/cardHover";
+import { authHeaders } from "../utils/api";
 import { DEAL_INSIGHTS, MEETING_PREPS, RELATIONSHIP_MAP, NEXT_BEST_ACTIONS } from "../data/mockData";
 import useBreakpoint from "../hooks/useBreakpoint";
 
@@ -130,7 +131,7 @@ export default function CopilotPage({ API, onOpenDeal }) {
 
   useEffect(() => {
     if (!API) return;
-    fetch(`${API}/api/db/deals`).then((r) => r.json()).then((d) => setDeals(Array.isArray(d) ? d : [])).catch(() => setDeals([]));
+    fetch(`${API}/api/db/deals`, { headers: authHeaders() }).then((r) => r.json()).then((d) => setDeals(Array.isArray(d) ? d : [])).catch(() => setDeals([]));
   }, [API]);
 
   const dealFor = (dealName) => deals.find((d) => (d.company || "").toLowerCase() === (dealName || "").toLowerCase());

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { authHeaders } from "../utils/api";
 import useBreakpoint from "../hooks/useBreakpoint";
 
 const STAGES = ["New Leads", "Qualified", "Demo", "Quote sent", "Negotiation", "Closed-Won", "Closed-Lost"];
@@ -49,7 +50,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
   const [quoteSending, setQuoteSending] = useState(false);
   const [quoteMsg, setQuoteMsg] = useState("");
 
-  const load = () => fetch(`${API}/api/db/deals`).then(r => r.json()).then(setDeals).catch(() => setDeals([]));
+  const load = () => fetch(`${API}/api/db/deals`, { headers: authHeaders() }).then(r => r.json()).then(setDeals).catch(() => setDeals([]));
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,7 +87,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
 
   const loadQuote = (dealId) => {
     setQuoteLoading(true);
-    fetch(`${API}/api/db/quote/${dealId}`)
+    fetch(`${API}/api/db/quote/${dealId}`, { headers: authHeaders() })
       .then(r => r.json())
       .then(q => {
         const items = (q.items || []).map(it => ({ description: it.description || "", quantity: it.quantity, unit_price: it.unit_price }));
@@ -103,7 +104,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
     const deal = deals.find(d => d.id === id);
     if (!deal || deal.stage === stage) return;
     setDeals(ds => ds.map(d => d.id === id ? { ...d, stage, days_in_stage: 0, stage_updated_at: todayISO(), status: stage === "Closed-Won" ? "won" : stage === "Closed-Lost" ? "lost" : "open" } : d));
-    fetch(`${API}/api/db/deals/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stage }) })
+    fetch(`${API}/api/db/deals/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ stage }) })
       .then(r => r.json()).then(u => setDeals(ds => ds.map(d => d.id === id ? u : d))).catch(() => load());
   };
 
@@ -116,14 +117,14 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
     setSaving(true);
     const isNew = selected === "new";
     const url = isNew ? `${API}/api/db/deals` : `${API}/api/db/deals/${selected.id}`;
-    fetch(url, { method: isNew ? "POST" : "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(draft) })
+    fetch(url, { method: isNew ? "POST" : "PATCH", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(draft) })
       .then(r => r.json()).then(() => { load(); close(); }).catch(() => setSaving(false));
   };
 
   const quickStage = (stage) => {
     if (isGuest) return;
     if (selected === "new") { setDraft({ ...draft, stage }); return; }
-    fetch(`${API}/api/db/deals/${selected.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stage }) })
+    fetch(`${API}/api/db/deals/${selected.id}`, { method: "PATCH", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ stage }) })
       .then(r => r.json()).then(() => { load(); close(); });
   };
 
@@ -131,7 +132,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
     if (isGuest) return;
     if (selected === "new") { close(); return; }
     if (!window.confirm(`Delete the deal with ${selected.company || "this company"}? This can't be undone.`)) return;
-    fetch(`${API}/api/db/deals/${selected.id}`, { method: "DELETE" }).then(() => { load(); close(); });
+    fetch(`${API}/api/db/deals/${selected.id}`, { method: "DELETE", headers: authHeaders() }).then(() => { load(); close(); });
   };
 
   const addItem = () => setQuoteItems([...quoteItems, { description: "", quantity: 1, unit_price: 0 }]);
@@ -139,7 +140,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
   const removeItem = (i) => setQuoteItems(quoteItems.filter((_, idx) => idx !== i));
 
   const putQuote = () => fetch(`${API}/api/db/quote/${selected.id}`, {
-    method: "PUT", headers: { "Content-Type": "application/json" },
+    method: "PUT", headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({ discount: discPct, items: quoteItems }),
   }).then(r => r.json());
 
@@ -157,7 +158,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
     if (!window.confirm("Mark this quote as sent? This sets the deal value to the quote total and moves it to Quote sent.")) return;
     setQuoteSending(true); setQuoteMsg("");
     putQuote()
-      .then(() => fetch(`${API}/api/db/quote/${selected.id}/send`, { method: "POST" }))
+      .then(() => fetch(`${API}/api/db/quote/${selected.id}/send`, { method: "POST", headers: authHeaders() }))
       .then(r => r.json())
       .then(() => { load(); close(); })
       .catch(() => { setQuoteMsg("Send failed"); setQuoteSending(false); });

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { authHeaders } from "../utils/api";
 
 export default function Upload({ onUpload, onSkip, API, onCancel }) {
   const [dragging, setDragging] = useState(false);
@@ -24,7 +25,7 @@ export default function Upload({ onUpload, onSkip, API, onCancel }) {
     const formData = new FormData();
     formData.append("file", file);
     try {
-      const res = await fetch(`${API}/api/db/import`, { method: "POST", body: formData });
+      const res = await fetch(`${API}/api/db/import`, { method: "POST", headers: authHeaders(), body: formData });
       const data = await res.json();
       if (data.error) {
         setError(data.error);

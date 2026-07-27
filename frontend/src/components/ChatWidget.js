@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { authHeaders } from "../utils/api";
 import useBreakpoint from "../hooks/useBreakpoint";
 
 const ICONS = {
@@ -147,7 +148,7 @@ export default function ChatWidget({ API, isGuest }) {
     try {
       const resp = await fetch(`${API}/api/chatbot`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({ message: trimmed, history: priorHistory }),
       });
       const data = await resp.json();
@@ -173,7 +174,7 @@ export default function ChatWidget({ API, isGuest }) {
     try {
       const resp = await fetch(`${API}/api/chatbot/confirm`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({ tool: target.tool, args: target.args }),
       });
       const data = await resp.json();

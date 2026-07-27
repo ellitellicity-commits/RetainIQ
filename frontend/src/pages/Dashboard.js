@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import CountUp from "../components/CountUp";
 import { cardHoverProps } from "../utils/cardHover";
+import { authHeaders } from "../utils/api";
 import useBreakpoint from "../hooks/useBreakpoint";
 
 const fmtMoney = (v) => "$" + Number(v || 0).toLocaleString();
@@ -33,8 +34,8 @@ export default function Dashboard({ API }) {
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
-    fetch(`${API}/api/db/stats`).then(r => r.json()).then(setStats);
-    fetch(`${API}/api/db/clients`).then(r => r.json()).then(setCustomers);
+    fetch(`${API}/api/db/stats`, { headers: authHeaders() }).then(r => r.json()).then(setStats);
+    fetch(`${API}/api/db/clients`, { headers: authHeaders() }).then(r => r.json()).then(setCustomers);
   }, [API]);
 
   if (!stats) return (

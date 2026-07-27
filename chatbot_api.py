@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 import httpx
 from flask import Blueprint, request, jsonify, current_app
 from activities_api import log_activity
-from auth_api import block_guest
+from auth_api import require_auth, require_write_access
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "retainiq.db")
@@ -142,12 +142,23 @@ def resolve_open_deals_by_company(conn, company):
     ).fetchall()
 
 
+def _forward_auth_header():
+    """The CRM data routes now require a bearer token. build_context() (and
+    the tool handlers below it) call those routes internally via
+    test_client() rather than querying the DB directly -- without this,
+    those internal calls would 401 against themselves and this dict-shaped
+    error response would get iterated as if it were the expected list."""
+    auth = request.headers.get("Authorization")
+    return {"Authorization": auth} if auth else {}
+
+
 def build_context():
     client = current_app.test_client()
+    auth_headers = _forward_auth_header()
 
-    stats = client.get("/api/db/stats").get_json() or {}
-    all_clients = client.get("/api/db/clients").get_json() or []
-    activities = client.get("/api/db/activities").get_json() or []
+    stats = client.get("/api/db/stats", headers=auth_headers).get_json() or {}
+    all_clients = client.get("/api/db/clients", headers=auth_headers).get_json() or []
+    activities = client.get("/api/db/activities", headers=auth_headers).get_json() or []
 
     at_risk = [c for c in all_clients if c.get("journey_stage") in ("Critical", "At-Risk", "Expired")]
     at_risk.sort(key=lambda c: (c.get("days_until_expiry") if c.get("days_until_expiry") is not None else 9999))
@@ -242,6 +253,7 @@ def _sanitize_history(history):
 
 
 @chatbot_bp.route("/api/chatbot", methods=["POST"])
+@require_auth
 def chatbot():
     data = request.get_json(force=True) or {}
     message = (data.get("message") or "").strip()
@@ -325,8 +337,9 @@ def _handle_chatbot(message, history):
             row = resolve_client_by_company(conn, company)
             if not row:
                 return {"type": "answer", "content": f"I couldn't find a client called \"{company}\"."}
-            client_row = next((c for c in current_app.test_client().get("/api/db/clients").get_json() if c["id"] == row["id"]), {})
-            resp = current_app.test_client().post("/api/email", json={
+            auth_headers = _forward_auth_header()
+            client_row = next((c for c in current_app.test_client().get("/api/db/clients", headers=auth_headers).get_json() if c["id"] == row["id"]), {})
+            resp = current_app.test_client().post("/api/email", headers=auth_headers, json={
                 "customer_name": row["company_name"],
                 "risk_score": client_row.get("churn_risk_score"),
                 "spend": client_row.get("contract_value"),
@@ -419,7 +432,7 @@ def _handle_chatbot(message, history):
 
 
 @chatbot_bp.route("/api/chatbot/confirm", methods=["POST"])
-@block_guest
+@require_write_access
 def chatbot_confirm():
     data = request.get_json(force=True) or {}
     tool = data.get("tool")
@@ -444,7 +457,7 @@ def chatbot_confirm():
             stage = args.get("stage")
             if stage not in STAGES:
                 return jsonify({"success": False, "message": f"\"{stage}\" isn't a valid deal stage."})
-            resp = current_app.test_client().patch(f"/api/db/deals/{deal['id']}", json={"stage": stage})
+            resp = current_app.test_client().patch(f"/api/db/deals/{deal['id']}", headers=_forward_auth_header(), json={"stage": stage})
             if resp.status_code != 200:
                 return jsonify({"success": False, "message": "Couldn't update that deal."})
             return jsonify({"success": True, "message": f"Moved {deal['company']}'s deal to {stage}."})

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { authHeaders } from "../utils/api";
 
 function getRelativeTime(dateStr) {
   const now = new Date();
@@ -24,7 +25,7 @@ export default function NotificationCenter({ API, isGuest }) {
 
   useEffect(() => {
     const loadNotifications = () => {
-      fetch(`${API}/api/db/notifications`).then(r => r.json()).then(d => setNotifications(Array.isArray(d) ? d : [])).catch(() => {});
+      fetch(`${API}/api/db/notifications`, { headers: authHeaders() }).then(r => r.json()).then(d => setNotifications(Array.isArray(d) ? d : [])).catch(() => {});
     };
     loadNotifications();
     // Notifications can be created from many places (this drawer, the Pipeline
@@ -39,13 +40,13 @@ export default function NotificationCenter({ API, isGuest }) {
   const markAllRead = () => {
     if (isGuest) return;
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    fetch(`${API}/api/db/notifications/mark-all-read`, { method: "PATCH" }).catch(() => {});
+    fetch(`${API}/api/db/notifications/mark-all-read`, { method: "PATCH", headers: authHeaders() }).catch(() => {});
   };
 
   const markRead = (id) => {
     if (isGuest) return;
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-    fetch(`${API}/api/db/notifications/${id}`, { method: "PATCH" }).catch(() => {});
+    fetch(`${API}/api/db/notifications/${id}`, { method: "PATCH", headers: authHeaders() }).catch(() => {});
   };
 
   useEffect(() => {

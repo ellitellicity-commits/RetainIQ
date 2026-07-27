@@ -2,7 +2,7 @@ import os, sqlite3
 from datetime import date, datetime, timedelta
 from flask import Blueprint, request, jsonify
 from activities_api import log_activity
-from auth_api import block_guest
+from auth_api import require_auth, require_write_access
 
 deals_bp = Blueprint("deals_bp", __name__)
 
@@ -110,6 +110,7 @@ def row_to_dict(r):
     return d
 
 @deals_bp.route("/api/db/deals", methods=["GET"])
+@require_auth
 def list_deals():
     conn = get_conn()
     rows = conn.execute(f"SELECT * FROM {TABLE} ORDER BY id").fetchall()
@@ -117,7 +118,7 @@ def list_deals():
     return jsonify([row_to_dict(r) for r in rows])
 
 @deals_bp.route("/api/db/deals", methods=["POST"])
-@block_guest
+@require_write_access
 def create_deal():
     data = request.get_json(force=True) or {}
     now = date.today().isoformat()
@@ -140,7 +141,7 @@ def create_deal():
     return jsonify(row_to_dict(row))
 
 @deals_bp.route("/api/db/deals/<int:deal_id>", methods=["PATCH", "PUT"])
-@block_guest
+@require_write_access
 def update_deal(deal_id):
     data = request.get_json(force=True) or {}
     conn = get_conn()
@@ -179,7 +180,7 @@ def update_deal(deal_id):
     return jsonify(row_to_dict(row))
 
 @deals_bp.route("/api/db/deals/<int:deal_id>", methods=["DELETE"])
-@block_guest
+@require_write_access
 def delete_deal(deal_id):
     conn = get_conn()
     conn.execute(f"DELETE FROM {TABLE} WHERE id=?", (deal_id,))

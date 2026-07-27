@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createColumnHelper } from "@tanstack/react-table";
 import DataTable from "../components/DataTable";
+import { authHeaders } from "../utils/api";
 
 const ctrl = { padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--card)", color: "var(--text)", fontFamily: "Inter", fontSize: 14, outline: "none" };
 const pill = { padding: "7px 16px", borderRadius: 999, fontFamily: "Inter", fontSize: 14, fontWeight: 500, cursor: "pointer", border: "1px solid var(--border)", background: "transparent", color: "var(--text2)" };
@@ -21,7 +22,7 @@ export default function Quotes({ API, onOpenDeal }) {
 
   const load = () => {
     setLoading(true);
-    fetch(`${API}/api/db/quotes`)
+    fetch(`${API}/api/db/quotes`, { headers: authHeaders() })
       .then(r => r.json())
       .then(d => setQuotes(Array.isArray(d) ? d : []))
       .catch(() => setQuotes([]))

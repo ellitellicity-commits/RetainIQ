@@ -5,6 +5,7 @@ import {
 } from "recharts";
 import CountUp from "../components/CountUp";
 import { cardHoverProps } from "../utils/cardHover";
+import { authHeaders } from "../utils/api";
 import useBreakpoint from "../hooks/useBreakpoint";
 
 const PROB = { "New Leads": 0.10, "Qualified": 0.25, "Demo": 0.40, "Quote sent": 0.60, "Negotiation": 0.80 };
@@ -77,15 +78,15 @@ export default function Analytics({ API }) {
   const [horizon, setHorizon] = useState("3");
 
   useEffect(() => {
-    fetch(`${API}/api/db/deals`).then(r => r.json()).then(setDeals).catch(() => setDeals([]));
+    fetch(`${API}/api/db/deals`, { headers: authHeaders() }).then(r => r.json()).then(setDeals).catch(() => setDeals([]));
   }, [API]);
 
   useEffect(() => {
-    fetch(`${API}/api/db/clients`).then(r => r.json()).then(d => setClients(Array.isArray(d) ? d : [])).catch(() => setClients([]));
+    fetch(`${API}/api/db/clients`, { headers: authHeaders() }).then(r => r.json()).then(d => setClients(Array.isArray(d) ? d : [])).catch(() => setClients([]));
   }, [API]);
 
   useEffect(() => {
-    fetch(`${API}/api/db/retention-history?months=${horizon}`).then(r => r.json()).then(setRetention).catch(() => setRetention([]));
+    fetch(`${API}/api/db/retention-history?months=${horizon}`, { headers: authHeaders() }).then(r => r.json()).then(setRetention).catch(() => setRetention([]));
   }, [API, horizon]);
 
   const open = deals.filter(d => d.status === "open");

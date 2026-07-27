@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 import sqlite3, os
 from datetime import datetime
 from activities_api import log_activity
-from auth_api import block_guest
+from auth_api import require_auth, require_write_access
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "retainiq.db")
@@ -58,6 +58,7 @@ def quote_total_for(c, deal_id, discount):
 
 
 @quotes_bp.route("/api/db/quote/<int:deal_id>", methods=["GET"])
+@require_auth
 def get_quote(deal_id):
     conn = get_conn()
     c = conn.cursor()
@@ -81,7 +82,7 @@ def get_quote(deal_id):
 
 
 @quotes_bp.route("/api/db/quote/<int:deal_id>", methods=["PUT"])
-@block_guest
+@require_write_access
 def save_quote(deal_id):
     data = request.get_json(force=True) or {}
     items = data.get("items", []) or []
@@ -141,7 +142,7 @@ def save_quote(deal_id):
 
 
 @quotes_bp.route("/api/db/quote/<int:deal_id>/send", methods=["POST"])
-@block_guest
+@require_write_access
 def send_quote(deal_id):
     conn = get_conn()
     c = conn.cursor()
@@ -175,6 +176,7 @@ def send_quote(deal_id):
 
 
 @quotes_bp.route("/api/db/quotes", methods=["GET"])
+@require_auth
 def quotes_list():
     """List quotes. With ?company=X, scoped to that company (used by the
     Clients drawer). Without it, returns every quote across every deal

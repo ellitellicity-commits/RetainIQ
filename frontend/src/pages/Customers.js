@@ -6,6 +6,7 @@ import ActivityTimeline from "../components/ActivityTimeline";
 import NoteEditor from "../components/NoteEditor";
 import DataTable from "../components/DataTable";
 import { NOTES } from "../data/mockData";
+import { authHeaders } from "../utils/api";
 import useBreakpoint from "../hooks/useBreakpoint";
 
 const fmtMoney = (v) =>
@@ -73,7 +74,7 @@ export default function Clients({ API, pageAction, clearAction, isGuest }) {
   const [detailsSubTab, setDetailsSubTab] = useState("overview");
 
   useEffect(() => {
-    fetch(`${API}/api/db/clients`).then(r => r.json()).then(setClients).catch(() => setClients([]));
+    fetch(`${API}/api/db/clients`, { headers: authHeaders() }).then(r => r.json()).then(setClients).catch(() => setClients([]));
   }, [API]);
 
   useEffect(() => {
@@ -148,7 +149,7 @@ export default function Clients({ API, pageAction, clearAction, isGuest }) {
 
   const loadContacts = (clientId) => {
     setContactsLoading(true);
-    fetch(`${API}/api/db/contacts?client_id=${clientId}`)
+    fetch(`${API}/api/db/contacts?client_id=${clientId}`, { headers: authHeaders() })
       .then(r => r.json())
       .then(d => {
         const arr = Array.isArray(d) ? d : [];
@@ -163,7 +164,7 @@ export default function Clients({ API, pageAction, clearAction, isGuest }) {
   const loadQuotes = (companyName) => {
     if (!companyName || companyName === "—") { setQuotes([]); return; }
     setQuotesLoading(true);
-    fetch(`${API}/api/db/quotes?company=${encodeURIComponent(companyName)}`)
+    fetch(`${API}/api/db/quotes?company=${encodeURIComponent(companyName)}`, { headers: authHeaders() })
       .then(r => r.json())
       .then(d => setQuotes(Array.isArray(d) ? d : []))
       .catch(() => setQuotes([]))
@@ -172,7 +173,7 @@ export default function Clients({ API, pageAction, clearAction, isGuest }) {
 
   const loadActivities = (clientId) => {
     setActivitiesLoading(true);
-    fetch(`${API}/api/db/activities?client_id=${clientId}`)
+    fetch(`${API}/api/db/activities?client_id=${clientId}`, { headers: authHeaders() })
       .then(r => r.json())
       .then(d => setActivities(Array.isArray(d) ? d : []))
       .catch(() => setActivities([]))
@@ -200,7 +201,7 @@ export default function Clients({ API, pageAction, clearAction, isGuest }) {
     setLogSaving(true);
     fetch(`${API}/api/db/activities`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({
         client_id: selected.id,
         type: logForm.type,
@@ -219,7 +220,7 @@ export default function Clients({ API, pageAction, clearAction, isGuest }) {
     if (isGuest || !selected || !email) return;
     fetch(`${API}/api/db/activities`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({
         client_id: selected.id,
         type: "email",
@@ -245,7 +246,7 @@ export default function Clients({ API, pageAction, clearAction, isGuest }) {
       phone: contactForm.phone, is_primary: contactForm.is_primary ? 1 : 0,
     };
     if (!isEdit) payload.client_id = selected.id;
-    fetch(url, { method: isEdit ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+    fetch(url, { method: isEdit ? "PATCH" : "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(payload) })
       .then(r => r.json())
       .then(() => { setContactForm(null); loadContacts(selected.id); })
       .catch(() => {})
@@ -255,7 +256,7 @@ export default function Clients({ API, pageAction, clearAction, isGuest }) {
   const deleteContact = (id, name) => {
     if (isGuest || !selected) return;
     if (!window.confirm(`Delete ${name || "this contact"}? This can't be undone.`)) return;
-    fetch(`${API}/api/db/contacts/${id}`, { method: "DELETE" })
+    fetch(`${API}/api/db/contacts/${id}`, { method: "DELETE", headers: authHeaders() })
       .then(() => loadContacts(selected.id))
       .catch(() => {});
   };
@@ -266,7 +267,7 @@ export default function Clients({ API, pageAction, clearAction, isGuest }) {
     setEmail(null);
     fetch(`${API}/api/email`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({
         name: nameOf(selected),
         plan: selected.software,

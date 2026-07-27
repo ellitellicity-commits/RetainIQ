@@ -2,7 +2,7 @@ import os, sqlite3
 from datetime import date
 from flask import Blueprint, request, jsonify
 from notifications_api import create_notification
-from auth_api import block_guest
+from auth_api import require_auth, require_write_access
 
 activities_bp = Blueprint("activities_bp", __name__)
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "retainiq.db")
@@ -118,6 +118,7 @@ def log_activity(client_id, type, notes=None, done_by=None, date_=None, notif_me
 
 
 @activities_bp.route("/api/db/activities", methods=["GET"])
+@require_auth
 def list_activities():
     cid = request.args.get("client_id")
     conn = get_conn()
@@ -146,7 +147,7 @@ def list_activities():
 
 
 @activities_bp.route("/api/db/activities", methods=["POST"])
-@block_guest
+@require_write_access
 def create_activity():
     d = request.get_json(force=True) or {}
     client_id = d.get("client_id")

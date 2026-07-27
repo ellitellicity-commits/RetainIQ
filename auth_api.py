@@ -70,63 +70,73 @@ def _get_bearer_token():
     return header[len("Bearer "):].strip()
 
 
-def _decode_token():
-    """Best-effort decode: returns the payload, or None if there's no token
-    or it doesn't verify (missing, malformed, expired, or tampered signature).
-    Never raises -- callers that need to distinguish "no token" from "bad
-    token" should use require_auth instead."""
+def _authenticate():
+    """Verifies the bearer token and loads the user it names.
+
+    Returns (user_row, is_guest) on success. Returns (None, None) on
+    failure, after having already set `request._auth_error` to the
+    (response, status) tuple the caller should return -- every failure
+    path (missing token, malformed/expired/tampered signature, or a
+    since-deleted account) answers identically so nothing about *why*
+    it failed leaks. Re-checking the DB on every call (not just trusting
+    the signature) is what makes a deleted account's outstanding token
+    stop working immediately instead of just at delete time.
+    """
     token = _get_bearer_token()
     if not token:
-        return None
+        request._auth_error = (jsonify({"error": "Authentication required"}), 401)
+        return None, None
     try:
-        return jwt.decode(token, _secret_key(), algorithms=[JWT_ALGO])
-    except jwt.PyJWTError:
-        return None
+        payload = jwt.decode(token, _secret_key(), algorithms=[JWT_ALGO])
+        user_id = int(payload["sub"])
+    except (jwt.PyJWTError, ValueError, KeyError):
+        request._auth_error = (jsonify({"error": "Invalid or expired session"}), 401)
+        return None, None
+
+    conn = get_conn()
+    try:
+        user = conn.execute(
+            "SELECT id, email, created_at FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
+    finally:
+        conn.close()
+
+    if not user:
+        request._auth_error = (jsonify({"error": "Invalid or expired session"}), 401)
+        return None, None
+
+    return user, bool(payload.get("guest"))
 
 
 def require_auth(f):
+    """Any valid session -- real user or guest. Use on routes that only
+    read data; a guest is allowed to browse everything."""
     @wraps(f)
     def wrapper(*args, **kwargs):
-        token = _get_bearer_token()
-        if not token:
-            return jsonify({"error": "Authentication required"}), 401
-        try:
-            payload = jwt.decode(token, _secret_key(), algorithms=[JWT_ALGO])
-            user_id = int(payload["sub"])
-        except (jwt.PyJWTError, ValueError, KeyError):
-            return jsonify({"error": "Invalid or expired session"}), 401
-
-        conn = get_conn()
-        try:
-            user = conn.execute(
-                "SELECT id, email, created_at FROM users WHERE id = ?", (user_id,)
-            ).fetchone()
-        finally:
-            conn.close()
-
-        # Re-checking against the DB (not just trusting the token) means a
-        # deleted account's outstanding token stops working immediately.
-        if not user:
-            return jsonify({"error": "Invalid or expired session"}), 401
-
+        user, is_guest = _authenticate()
+        if user is None:
+            return request._auth_error
         request.user = user
-        request.is_guest = bool(payload.get("guest"))
+        request.is_guest = is_guest
         return f(*args, **kwargs)
 
     return wrapper
 
 
-def block_guest(f):
-    """Apply to any mutating route across the app (not just auth's own).
-    Independent of require_auth: routes that don't otherwise require a
-    session stay open to everyone as before, but a guest-flagged token is
-    rejected outright, regardless of what the frontend does or doesn't
-    show/disable."""
+def require_write_access(f):
+    """A valid session belonging to a real (non-guest) user. Use on any
+    route that creates/updates/deletes data: 401 with no/invalid token,
+    403 for an authenticated-but-guest token, regardless of what the
+    frontend does or doesn't show/disable."""
     @wraps(f)
     def wrapper(*args, **kwargs):
-        payload = _decode_token()
-        if payload and payload.get("guest"):
+        user, is_guest = _authenticate()
+        if user is None:
+            return request._auth_error
+        if is_guest:
             return jsonify({"error": "Guest accounts are read-only"}), 403
+        request.user = user
+        request.is_guest = False
         return f(*args, **kwargs)
 
     return wrapper
@@ -263,10 +273,8 @@ def me():
 
 
 @auth_bp.route("/api/auth/account", methods=["DELETE"])
-@require_auth
+@require_write_access
 def delete_account():
-    if request.is_guest:
-        return jsonify({"error": "Guest accounts are read-only"}), 403
     conn = get_conn()
     try:
         conn.execute("DELETE FROM users WHERE id = ?", (request.user["id"],))
