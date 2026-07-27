@@ -65,13 +65,14 @@ const DealInsightCard = memo(function DealInsightCard({ insight, matchedDeal, on
   const hasAnimated = useRef(false);
 
   useEffect(() => {
-    if (!fillRef.current || hasAnimated.current) return;
+    if (!fillRef.current || hasAnimated.current) return undefined;
     hasAnimated.current = true;
-    gsap.fromTo(
+    const tween = gsap.fromTo(
       fillRef.current,
       { width: "0%" },
       { width: `${insight.confidence * 100}%`, duration: 0.9, ease: "power2.out", delay: 0.15 }
     );
+    return () => tween.kill();
   }, [insight.confidence]);
 
   return (

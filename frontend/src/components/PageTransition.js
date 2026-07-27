@@ -9,8 +9,9 @@ export default function PageTransition({ pageKey, children }) {
   const ref = useRef(null);
 
   useEffect(() => {
-    if (!ref.current) return;
-    gsap.fromTo(ref.current, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" });
+    if (!ref.current) return undefined;
+    const tween = gsap.fromTo(ref.current, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" });
+    return () => tween.kill();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageKey]);
 
