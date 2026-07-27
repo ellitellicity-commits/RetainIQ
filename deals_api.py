@@ -2,6 +2,7 @@ import os, sqlite3
 from datetime import date, datetime, timedelta
 from flask import Blueprint, request, jsonify
 from activities_api import log_activity
+from auth_api import block_guest
 
 deals_bp = Blueprint("deals_bp", __name__)
 
@@ -116,6 +117,7 @@ def list_deals():
     return jsonify([row_to_dict(r) for r in rows])
 
 @deals_bp.route("/api/db/deals", methods=["POST"])
+@block_guest
 def create_deal():
     data = request.get_json(force=True) or {}
     now = date.today().isoformat()
@@ -138,6 +140,7 @@ def create_deal():
     return jsonify(row_to_dict(row))
 
 @deals_bp.route("/api/db/deals/<int:deal_id>", methods=["PATCH", "PUT"])
+@block_guest
 def update_deal(deal_id):
     data = request.get_json(force=True) or {}
     conn = get_conn()
@@ -176,6 +179,7 @@ def update_deal(deal_id):
     return jsonify(row_to_dict(row))
 
 @deals_bp.route("/api/db/deals/<int:deal_id>", methods=["DELETE"])
+@block_guest
 def delete_deal(deal_id):
     conn = get_conn()
     conn.execute(f"DELETE FROM {TABLE} WHERE id=?", (deal_id,))

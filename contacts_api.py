@@ -2,6 +2,7 @@ import os, sqlite3
 from datetime import date
 from flask import Blueprint, request, jsonify
 from activities_api import log_activity
+from auth_api import block_guest
 
 contacts_bp = Blueprint("contacts_bp", __name__)
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "retainiq.db")
@@ -33,6 +34,7 @@ def list_contacts():
     return jsonify([dict(r) for r in rows])
 
 @contacts_bp.route("/api/db/contacts", methods=["POST"])
+@block_guest
 def create_contact():
     d = request.get_json(force=True) or {}
     conn = get_conn()
@@ -52,6 +54,7 @@ def create_contact():
     return jsonify(dict(row))
 
 @contacts_bp.route("/api/db/contacts/<int:cid>", methods=["PATCH", "PUT"])
+@block_guest
 def update_contact(cid):
     d = request.get_json(force=True) or {}
     conn = get_conn()
@@ -78,6 +81,7 @@ def update_contact(cid):
     return jsonify(dict(row))
 
 @contacts_bp.route("/api/db/contacts/<int:cid>", methods=["DELETE"])
+@block_guest
 def delete_contact(cid):
     conn = get_conn()
     existing = conn.execute(f"SELECT * FROM {TABLE} WHERE id=?", (cid,)).fetchone()

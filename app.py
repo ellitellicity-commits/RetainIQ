@@ -8,7 +8,7 @@ from database import get_db, init_db, seed_if_empty, ensure_todays_retention_sna
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY")
 
-from auth_api import auth_bp
+from auth_api import auth_bp, block_guest
 app.register_blueprint(auth_bp)
 from contacts_api import contacts_bp
 app.register_blueprint(contacts_bp)
@@ -394,6 +394,7 @@ def score_customer():
 
 
 @app.route("/api/upload", methods=["POST"])
+@block_guest
 def upload_csv():
     if "file" not in request.files:
         return jsonify({"error": "No file provided"}), 400
@@ -421,6 +422,7 @@ def upload_csv():
 
 
 @app.route("/api/reset", methods=["POST"])
+@block_guest
 def reset_data():
     global model_loaded
     original = os.path.join(BASE_DIR, "customers_backup.csv")
@@ -615,6 +617,7 @@ def get_retention_history():
 
 
 @app.route("/api/db/import", methods=["POST"])
+@block_guest
 def import_data():
     if "file" not in request.files:
         return jsonify({"error": "No file provided"}), 400
