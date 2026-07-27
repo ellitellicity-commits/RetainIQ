@@ -71,10 +71,13 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: 'Inter', sans-serif;
-  overflow: hidden;
 }
 
-.app { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
+/* overflow:hidden lives on .app, not body: the authenticated shell is a
+   deliberate fixed-height, no-page-scroll frame (see DESIGN.md), but Login
+   renders directly into body before .app mounts and needs the document to
+   scroll normally when its content is taller than a short mobile viewport. */
+.app { display: flex; flex-direction: column; height: 100vh; width: 100vw; overflow: hidden; }
 
 /* ── HEADER ── */
 .header {

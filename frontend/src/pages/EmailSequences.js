@@ -158,8 +158,11 @@ export default function EmailSequences() {
             padding: "20px 24px", boxShadow: "var(--shadow)"
           }}>
             {/* Card Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{
+              display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center",
+              justifyContent: "space-between", gap: isMobile ? 10 : 0, marginBottom: 20,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                 <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)" }}>{seq.name}</div>
                 {statusBadge(seq.status)}
               </div>

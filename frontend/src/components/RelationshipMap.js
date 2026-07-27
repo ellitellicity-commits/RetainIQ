@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
+import useBreakpoint from "../hooks/useBreakpoint";
 
 function getWarmthColor(warmth) {
   if (warmth > 0.7) return "var(--green)";
@@ -54,13 +55,42 @@ export default function RelationshipMap({ data }) {
   const nodeRefs = useRef([]);
   const lineRefs = useRef([]);
   const badgeRefs = useRef([]);
+  const svgRef = useRef(null);
 
-  const svgWidth = 480;
-  const svgHeight = 380;
+  // A phone-sized intrinsic canvas, not just a shrunk desktop one: scaling
+  // the 480x380 desktop graph down to fit a ~230px-wide phone card via
+  // maxWidth:100% squashed the 10-11px labels to ~5px -- technically visible,
+  // not actually readable. Drawing a smaller graph natively keeps it near
+  // 1:1 scale on a phone instead of relying on CSS shrink to fit it.
+  const { isMobile } = useBreakpoint();
+  const svgWidth = isMobile ? 220 : 480;
+  const svgHeight = isMobile ? 200 : 380;
+  const orbitRadius = isMobile ? 72 : 130;
+  const companyNodeRadius = isMobile ? 26 : 36;
+
+  // The <svg> can still scale down via maxWidth:100% on the narrowest phones
+  // where even the mobile canvas doesn't fit. The hover hint and click
+  // popover are plain HTML siblings positioned with raw pixel offsets, so
+  // they need the *rendered* width, not the intrinsic one, or they land at
+  // coordinates that only make sense at native size -- overflowing the
+  // viewport once the graph is scaled down at all.
+  const [renderedWidth, setRenderedWidth] = useState(svgWidth);
+  useEffect(() => {
+    setRenderedWidth(svgWidth);
+  }, [svgWidth]);
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect?.width;
+      if (width) setRenderedWidth(width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  const scale = renderedWidth / svgWidth;
   const centerX = svgWidth / 2;
   const centerY = svgHeight / 2;
-  const orbitRadius = 130;
-  const companyNodeRadius = 36;
 
   const contacts = data ? data.contacts : [];
   const company = data ? data.company : "";
@@ -134,10 +164,14 @@ export default function RelationshipMap({ data }) {
   };
 
   const popoverContact = selectedContact !== null ? contactPositions[selectedContact] : null;
+  // Never wider than the rendered graph itself -- on a narrow phone the
+  // graph can render well under the popover's old fixed 190px.
+  const popoverWidth = Math.min(190, renderedWidth - 8);
 
   return (
     <div style={{ position: "relative", width: "100%", display: "flex", justifyContent: "center" }}>
       <svg
+        ref={svgRef}
         width={svgWidth}
         height={svgHeight}
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
@@ -261,8 +295,11 @@ export default function RelationshipMap({ data }) {
         <div
           style={{
             position: "absolute",
-            top: contactPositions[hoveredContact].y - 10,
-            left: contactPositions[hoveredContact].x + contactPositions[hoveredContact].radius + 12,
+            top: contactPositions[hoveredContact].y * scale - 10,
+            left: Math.min(
+              renderedWidth - 140,
+              contactPositions[hoveredContact].x * scale + contactPositions[hoveredContact].radius * scale + 12
+            ),
             background: "var(--card)",
             border: "1px solid var(--border)",
             borderRadius: "var(--radius)",
@@ -287,15 +324,18 @@ export default function RelationshipMap({ data }) {
         <div
           style={{
             position: "absolute",
-            top: Math.max(0, popoverContact.y - 20),
-            left: Math.min(svgWidth - 190, popoverContact.x + popoverContact.radius + 14),
+            top: Math.max(0, popoverContact.y * scale - 20),
+            left: Math.max(
+              0,
+              Math.min(renderedWidth - popoverWidth, popoverContact.x * scale + popoverContact.radius * scale + 14)
+            ),
             background: "var(--card)",
             border: "1px solid var(--brand-bright)",
             borderRadius: "var(--radius)",
             padding: "12px 16px",
             boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
             zIndex: 11,
-            minWidth: 190,
+            width: popoverWidth,
           }}
         >
           <button
