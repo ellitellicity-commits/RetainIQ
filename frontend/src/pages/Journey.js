@@ -31,7 +31,7 @@ const field = { width: "100%", padding: "9px 12px", borderRadius: 8, border: "1p
 const lbl = { fontSize: 12.5, color: "var(--text3)", marginBottom: 4, marginTop: 14 };
 const qfield = { padding: "8px 10px", borderRadius: 7, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontFamily: "Inter", fontSize: 13.5, outline: "none", boxSizing: "border-box" };
 
-export default function Pipeline({ API, pageAction, clearAction, openDealId, clearOpenDeal }) {
+export default function Pipeline({ API, pageAction, clearAction, openDealId, clearOpenDeal, isGuest }) {
   const { isMobile } = useBreakpoint();
   const [deals, setDeals] = useState([]);
   const [draggingId, setDraggingId] = useState(null);
@@ -99,6 +99,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
   };
 
   const moveDeal = (id, stage) => {
+    if (isGuest) return;
     const deal = deals.find(d => d.id === id);
     if (!deal || deal.stage === stage) return;
     setDeals(ds => ds.map(d => d.id === id ? { ...d, stage, days_in_stage: 0, stage_updated_at: todayISO(), status: stage === "Closed-Won" ? "won" : stage === "Closed-Lost" ? "lost" : "open" } : d));
@@ -111,6 +112,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
   const close = () => { setSelected(null); setDraft(null); setSaving(false); setQuoteItems([]); setQuoteDiscount("0"); setQuoteStatus("none"); setQuoteSaving(false); setQuoteSending(false); setQuoteMsg(""); };
 
   const save = () => {
+    if (isGuest) return;
     setSaving(true);
     const isNew = selected === "new";
     const url = isNew ? `${API}/api/db/deals` : `${API}/api/db/deals/${selected.id}`;
@@ -119,12 +121,14 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
   };
 
   const quickStage = (stage) => {
+    if (isGuest) return;
     if (selected === "new") { setDraft({ ...draft, stage }); return; }
     fetch(`${API}/api/db/deals/${selected.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stage }) })
       .then(r => r.json()).then(() => { load(); close(); });
   };
 
   const del = () => {
+    if (isGuest) return;
     if (selected === "new") { close(); return; }
     if (!window.confirm(`Delete the deal with ${selected.company || "this company"}? This can't be undone.`)) return;
     fetch(`${API}/api/db/deals/${selected.id}`, { method: "DELETE" }).then(() => { load(); close(); });
@@ -140,7 +144,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
   }).then(r => r.json());
 
   const saveQuote = () => {
-    if (selected === "new" || !selected) return;
+    if (isGuest || selected === "new" || !selected) return;
     setQuoteSaving(true); setQuoteMsg("");
     putQuote()
       .then(q => { setQuoteStatus(q.status || "draft"); setQuoteMsg("Saved ✓"); })
@@ -149,7 +153,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
   };
 
   const sendQuote = () => {
-    if (selected === "new" || !selected) return;
+    if (isGuest || selected === "new" || !selected) return;
     if (!window.confirm("Mark this quote as sent? This sets the deal value to the quote total and moves it to Quote sent.")) return;
     setQuoteSending(true); setQuoteMsg("");
     putQuote()
@@ -164,7 +168,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
     const big = (d.value || 0) >= 100000;
     const overdue = d.next_action_date && d.next_action_date <= todayISO() && d.status === "open";
     return (
-      <div key={d.id} draggable={!isMobile}
+      <div key={d.id} draggable={!isMobile && !isGuest}
         onDragStart={() => setDraggingId(d.id)}
         onDragEnd={() => { setDraggingId(null); setOverStage(null); }}
         onClick={() => openDeal(d)}
@@ -193,7 +197,8 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
             <select
               value={d.stage}
               onChange={(e) => moveDeal(d.id, e.target.value)}
-              style={{ width: "100%", minHeight: 40, padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border2)", background: "var(--bg)", color: "var(--text)", fontFamily: "Inter", fontSize: 13.5, cursor: "pointer" }}>
+              disabled={isGuest}
+              style={{ width: "100%", minHeight: 40, padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border2)", background: "var(--bg)", color: "var(--text)", fontFamily: "Inter", fontSize: 13.5, cursor: isGuest ? "not-allowed" : "pointer", opacity: isGuest ? 0.6 : 1 }}>
               {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
@@ -260,12 +265,12 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
           <div style={lbl}>Expected close date</div>
           <input style={field} type="date" value={(draft.expected_close_date || "").slice(0, 10)} onChange={(e) => setDraft({ ...draft, expected_close_date: e.target.value })} />
 
-          <button onClick={save} disabled={saving}
-            style={{ width: "100%", marginTop: 20, padding: "11px 16px", borderRadius: 10, border: "none", background: "var(--cyan)", color: "#fff", fontFamily: "Inter", fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: saving ? 0.7 : 1 }}>
+          <button onClick={save} disabled={saving || isGuest} title={isGuest ? "Guest accounts are read-only" : ""}
+            style={{ width: "100%", marginTop: 20, padding: "11px 16px", borderRadius: 10, border: "none", background: "var(--cyan)", color: "#fff", fontFamily: "Inter", fontSize: 14, fontWeight: 600, cursor: isGuest ? "not-allowed" : "pointer", opacity: saving || isGuest ? 0.7 : 1 }}>
             {saving ? "Saving…" : (selected === "new" ? "Create deal" : "Save changes")}
           </button>
 
-          {selected !== "new" && (
+          {selected !== "new" && !isGuest && (
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
               <button onClick={() => quickStage("Closed-Won")} style={{ flex: 1, padding: "9px", borderRadius: 9, border: "1px solid #4a6b2a", background: "transparent", color: "#97C459", fontFamily: "Inter", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Mark won</button>
               <button onClick={() => quickStage("Closed-Lost")} style={{ flex: 1, padding: "9px", borderRadius: 9, border: "1px solid #6e3636", background: "transparent", color: "var(--danger-soft)", fontFamily: "Inter", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Mark lost</button>
@@ -331,11 +336,11 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
                   </div>
 
                   <div style={{ display: "flex", gap: 8, marginTop: 16, alignItems: "center" }}>
-                    <button onClick={saveQuote} disabled={quoteSaving || quoteSending}
-                      style={{ flex: 1, padding: "10px", borderRadius: 9, border: "1px solid var(--border2)", background: "transparent", color: "var(--text)", fontFamily: "Inter", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+                    <button onClick={saveQuote} disabled={quoteSaving || quoteSending || isGuest} title={isGuest ? "Guest accounts are read-only" : ""}
+                      style={{ flex: 1, padding: "10px", borderRadius: 9, border: "1px solid var(--border2)", background: "transparent", color: "var(--text)", fontFamily: "Inter", fontSize: 14, fontWeight: 600, cursor: isGuest ? "not-allowed" : "pointer", opacity: isGuest ? 0.6 : 1 }}>
                       {quoteSaving ? "Saving…" : "Save quote"}</button>
-                    <button onClick={sendQuote} disabled={quoteSaving || quoteSending}
-                      style={{ flex: 1, padding: "10px", borderRadius: 9, border: "none", background: "var(--cyan)", color: "#fff", fontFamily: "Inter", fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: (quoteSaving || quoteSending) ? 0.7 : 1 }}>
+                    <button onClick={sendQuote} disabled={quoteSaving || quoteSending || isGuest} title={isGuest ? "Guest accounts are read-only" : ""}
+                      style={{ flex: 1, padding: "10px", borderRadius: 9, border: "none", background: "var(--cyan)", color: "#fff", fontFamily: "Inter", fontSize: 14, fontWeight: 600, cursor: isGuest ? "not-allowed" : "pointer", opacity: (quoteSaving || quoteSending || isGuest) ? 0.7 : 1 }}>
                       {quoteSending ? "Sending…" : "Mark as sent"}</button>
                   </div>
                   {quoteMsg ? <div style={{ fontSize: 12.5, color: "var(--text3)", marginTop: 8, textAlign: "right" }}>{quoteMsg}</div> : null}
@@ -353,7 +358,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
         <div style={{ fontFamily: "var(--font-display)", fontSize: 32, fontWeight: 700, color: "var(--text)", letterSpacing: -0.5 }}>Pipeline</div>
-        <button onClick={openNew} style={{ background: "var(--cyan)", color: "#fff", border: "none", fontFamily: "Inter", fontSize: 14, fontWeight: 600, padding: "9px 16px", borderRadius: 9, cursor: "pointer" }}>+ New deal</button>
+        {!isGuest && <button onClick={openNew} style={{ background: "var(--cyan)", color: "#fff", border: "none", fontFamily: "Inter", fontSize: 14, fontWeight: 600, padding: "9px 16px", borderRadius: 9, cursor: "pointer" }}>+ New deal</button>}
       </div>
       <div style={{ color: "var(--text2)", fontSize: 15, marginBottom: 20 }}>{isMobile ? "Tap a deal to open it, or move it to a stage below" : "Drag deals between stages"} · {fmtBig(openValue)} open across pipeline</div>
 

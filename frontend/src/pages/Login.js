@@ -84,10 +84,26 @@ export default function Login({ API, onAuthenticated }) {
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showForgotNote, setShowForgotNote] = useState(false);
+  const [guestModeEnabled, setGuestModeEnabled] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
+  const [guestError, setGuestError] = useState("");
 
   const btnRef = useRef(null);
   const btnLabelRef = useRef(null);
   const btnSpinnerRef = useRef(null);
+  // A ref, not just the `submitting` state, so a second click that lands
+  // before React commits the state update still sees the lock -- state
+  // alone isn't synchronous enough to stop a fast double-click.
+  const inFlightRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API}/api/auth/config`)
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => { if (!cancelled) setGuestModeEnabled(!!data.guestModeEnabled); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [API]);
 
   const touch = (field) => setTouched((t) => ({ ...t, [field]: true }));
 
@@ -139,8 +155,9 @@ export default function Login({ API, onAuthenticated }) {
     e.preventDefault();
     setTouched({ email: true, password: true, confirmPassword: true });
     setFormError("");
-    if (!canSubmit || submitting) return;
+    if (!canSubmit || inFlightRef.current) return;
 
+    inFlightRef.current = true;
     setSubmitting(true);
     setButtonLoading(true);
     try {
@@ -161,8 +178,31 @@ export default function Login({ API, onAuthenticated }) {
       setFormError("Can't reach the server. Check your connection and try again.");
       shakeButton();
     } finally {
+      inFlightRef.current = false;
       setSubmitting(false);
       setButtonLoading(false);
+    }
+  };
+
+  const guestInFlightRef = useRef(false);
+  const handleGuestLogin = async () => {
+    if (guestInFlightRef.current) return;
+    guestInFlightRef.current = true;
+    setGuestLoading(true);
+    setGuestError("");
+    try {
+      const res = await fetch(`${API}/api/auth/guest`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setGuestError(data.error || "Guest mode isn't available right now.");
+        return;
+      }
+      onAuthenticated(data.user, data.token);
+    } catch (err) {
+      setGuestError("Can't reach the server. Check your connection and try again.");
+    } finally {
+      guestInFlightRef.current = false;
+      setGuestLoading(false);
     }
   };
 
@@ -291,7 +331,7 @@ export default function Login({ API, onAuthenticated }) {
             <button
               ref={btnRef}
               type="submit"
-              disabled={submitting}
+              disabled={submitting || guestLoading}
               aria-busy={submitting}
               style={{
                 position: "relative", width: "100%", marginTop: 16, background: "var(--cyan)", border: "none",
@@ -323,6 +363,32 @@ export default function Login({ API, onAuthenticated }) {
             <div style={{ marginTop: 10, color: "var(--text3)", fontSize: 12, lineHeight: 1.5 }}>
               Password reset isn't available yet — contact your account admin.
             </div>
+          )}
+
+          {guestModeEnabled && (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 24 }}>
+                <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+                <span style={{ fontSize: 11, color: "var(--text3)" }}>or</span>
+                <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+              </div>
+              <button
+                type="button"
+                onClick={handleGuestLogin}
+                disabled={guestLoading || submitting}
+                style={{
+                  width: "100%", marginTop: 14, background: "transparent", border: "1px solid var(--border2)",
+                  borderRadius: 9, padding: "10px", color: "var(--text3)", fontFamily: "var(--font-body)", fontSize: 13,
+                  fontWeight: 500, cursor: guestLoading ? "default" : "pointer",
+                }}
+              >
+                {guestLoading ? "Loading demo…" : "Continue as Guest"}
+              </button>
+              <div style={{ textAlign: "center", marginTop: 6, fontSize: 11, color: "var(--text3)" }}>
+                Browse a live demo — read-only, no account needed.
+              </div>
+              <FieldError>{guestError}</FieldError>
+            </>
           )}
 
           <div style={{ textAlign: "center", marginTop: 28, fontSize: 11, color: "var(--text3)" }}>

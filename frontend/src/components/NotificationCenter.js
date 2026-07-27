@@ -16,7 +16,7 @@ function getRelativeTime(dateStr) {
   return "just now";
 }
 
-export default function NotificationCenter({ API }) {
+export default function NotificationCenter({ API, isGuest }) {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const ref = useRef(null);
@@ -37,11 +37,13 @@ export default function NotificationCenter({ API }) {
   }, [API]);
 
   const markAllRead = () => {
+    if (isGuest) return;
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     fetch(`${API}/api/db/notifications/mark-all-read`, { method: "PATCH" }).catch(() => {});
   };
 
   const markRead = (id) => {
+    if (isGuest) return;
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
     fetch(`${API}/api/db/notifications/${id}`, { method: "PATCH" }).catch(() => {});
   };
@@ -100,7 +102,7 @@ export default function NotificationCenter({ API }) {
             style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, width: "min(360px, calc(100vw - 24px))", maxHeight: 480, overflowY: "auto", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.2)", zIndex: 1001 }}>
             <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontWeight: 600, fontSize: 14 }}>Notifications</span>
-              {unread > 0 && <button onClick={markAllRead} style={{ fontSize: 12, color: "var(--brand-bright)", cursor: "pointer", background: "none", border: "none", fontFamily: "Inter", fontWeight: 500 }}>Mark all read</button>}
+              {unread > 0 && !isGuest && <button onClick={markAllRead} style={{ fontSize: 12, color: "var(--brand-bright)", cursor: "pointer", background: "none", border: "none", fontFamily: "Inter", fontWeight: 500 }}>Mark all read</button>}
             </div>
             <div>
               {notifications.length === 0 && (

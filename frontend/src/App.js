@@ -87,6 +87,23 @@ export default function App() {
     setAuthUser(null);
   };
 
+  // Fires in every OTHER tab (never the one that made the change) when
+  // localStorage is written -- lets a second tab react immediately to a
+  // logout (or a fresh login) that happened elsewhere, instead of sitting
+  // in a stale-authenticated state until some unrelated request 401s.
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key !== "riq_auth_token") return;
+      if (e.newValue === authToken) return;
+      setAuthToken(e.newValue);
+      if (!e.newValue) setAuthUser(null);
+    };
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
+  }, [authToken]);
+
+  const isGuest = !!(authUser && authUser.guest);
+
   useEffect(() => { if (!isMobile) setMobileNavOpen(false); }, [isMobile]);
 
   useEffect(() => {
@@ -229,16 +246,18 @@ export default function App() {
         {(afterClick || !collapsed) && (theme === "dark" ? "Light mode" : "Dark mode")}
       </button>
 
-      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setUploaded(false); if (afterClick) afterClick(); }}
-        title={collapsed && !afterClick ? "Change data" : ""} aria-label="Change data"
-        style={ghostBtn}
-        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover2)")}
-        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-        <span style={{ display: "flex", flex: "0 0 auto" }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4"/><polyline points="7 9 12 4 17 9"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg>
-        </span>
-        {(afterClick || !collapsed) && "Change data"}
-      </motion.button>
+      {!isGuest && (
+        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setUploaded(false); if (afterClick) afterClick(); }}
+          title={collapsed && !afterClick ? "Change data" : ""} aria-label="Change data"
+          style={ghostBtn}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover2)")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+          <span style={{ display: "flex", flex: "0 0 auto" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4"/><polyline points="7 9 12 4 17 9"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg>
+          </span>
+          {(afterClick || !collapsed) && "Change data"}
+        </motion.button>
+      )}
 
       <button onClick={() => { handleLogout(); if (afterClick) afterClick(); }} title={collapsed && !afterClick ? "Log out" : ""} aria-label="Log out"
         style={ghostBtn}
@@ -258,6 +277,11 @@ export default function App() {
         <svg width={size / 2} height={size / 2} viewBox="0 0 24 24" fill="#ffffff" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>
       </div>
       <div style={{ fontSize: 16, fontWeight: 600, color: "var(--logo-text)" }}>RetainIQ</div>
+      {isGuest && (
+        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: "var(--text3)", border: "1px solid var(--border2)", borderRadius: 999, padding: "2px 8px", textTransform: "uppercase" }}>
+          Guest
+        </span>
+      )}
     </div>
   );
 
@@ -340,14 +364,14 @@ export default function App() {
 
       <main style={{ flex: 1, minWidth: 0, height: "100%", overflowY: "auto", padding: isMobile ? "16px 16px 28px" : "28px 34px", position: "relative", paddingTop: isMobile ? 4 : 16 }}>
         <div style={{ position: "sticky", top: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, zIndex: 10, paddingBottom: 8 }}>
-          <NotificationCenter API={API} />
+          <NotificationCenter API={API} isGuest={isGuest} />
         </div>
 
         <PageTransition pageKey={page}>
           {page === "dashboard" && <Dashboard API={API} />}
-          {page === "customers" && <Customers API={API} pageAction={pageAction} clearAction={() => setPageAction(null)} />}
+          {page === "customers" && <Customers API={API} pageAction={pageAction} clearAction={() => setPageAction(null)} isGuest={isGuest} />}
           {page === "contacts"  && <Contacts API={API} />}
-          {page === "journey"   && <Journey API={API} pageAction={pageAction} clearAction={() => setPageAction(null)} openDealId={openDealId} clearOpenDeal={() => setOpenDealId(null)} />}
+          {page === "journey"   && <Journey API={API} pageAction={pageAction} clearAction={() => setPageAction(null)} openDealId={openDealId} clearOpenDeal={() => setOpenDealId(null)} isGuest={isGuest} />}
           {page === "quotes"    && <Quotes API={API} onOpenDeal={openDealInPipeline} />}
           {page === "alerts"    && <Alerts API={API} />}
           {page === "copilot"   && <CopilotPage API={API} onOpenDeal={openDealInPipeline} />}
@@ -358,7 +382,7 @@ export default function App() {
       </main>
 
       <CommandPalette open={cmdKOpen} onClose={() => setCmdKOpen(false)} onNavigate={handleCmdNavigate} />
-      <ChatWidget API={API} />
+      <ChatWidget API={API} isGuest={isGuest} />
     </div>
   );
 }
