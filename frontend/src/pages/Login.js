@@ -129,6 +129,28 @@ export default function Login({ API, onAuthenticated }) {
   const [guestModeEnabled, setGuestModeEnabled] = useState(false);
   const [guestLoading, setGuestLoading] = useState(false);
   const [guestError, setGuestError] = useState("");
+  // True once the initial /api/auth/config fetch has taken a while --
+  // lets the UI say *something* instead of Guest Mode just silently not
+  // being there for up to a minute.
+  const [configSlow, setConfigSlow] = useState(false);
+  // True once the retry loop below has used up its whole ~60s budget with
+  // no success -- without this, a genuinely down/unreachable backend left
+  // the "waking up, this can take a minute" hint on screen forever, which
+  // becomes actively misleading once retrying has actually stopped. Lets
+  // the UI switch to a "give up" message with a manual way back in.
+  const [configExhausted, setConfigExhausted] = useState(false);
+  // Bumped by the manual "Try again" action to re-run the config effect.
+  const [configRetryToken, setConfigRetryToken] = useState(0);
+  // Same idea for an in-flight sign-in/signup or guest-login request: a
+  // free-tier host can take real seconds to respond (cold start, or a
+  // request queued behind another one -- see DEVELOPER_GUIDE.md's Render
+  // Start Command note), and a bare spinner with no explanation reads as
+  // "broken," not "slow." Flips on after a short delay so a normal fast
+  // response never shows it.
+  const [submitSlow, setSubmitSlow] = useState(false);
+  const [guestSlow, setGuestSlow] = useState(false);
+  const SLOW_HINT_DELAY_MS = 4000;
+  const slowHint = "Waking up the server — this can take a minute on the free tier.";
 
   const btnRef = useRef(null);
   const btnLabelRef = useRef(null);
@@ -148,18 +170,37 @@ export default function Login({ API, onAuthenticated }) {
     // cold start, rather than giving up after a couple of quick attempts.
     const MAX_ATTEMPTS = 15;
     const RETRY_INTERVAL_MS = 4000;
+    // A request queued behind a slow/hung request on the same worker (the
+    // single-worker scenario this whole file exists to buy patience for)
+    // doesn't reject -- it just stays pending until that worker frees up.
+    // So the hint can't only be failure-triggered (the .catch() below);
+    // it needs its own timer independent of whether any attempt has
+    // actually failed yet.
+    const slowTimer = setTimeout(() => { if (!cancelled) setConfigSlow(true); }, SLOW_HINT_DELAY_MS);
     const loadConfig = (attempt = 0) => {
       fetch(`${API}/api/auth/config`)
         .then((res) => (res.ok ? res.json() : Promise.reject()))
-        .then((data) => { if (!cancelled) setGuestModeEnabled(!!data.guestModeEnabled); })
+        .then((data) => {
+          if (cancelled) return;
+          setGuestModeEnabled(!!data.guestModeEnabled);
+          setConfigSlow(false);
+          setConfigExhausted(false);
+        })
         .catch(() => {
-          if (cancelled || attempt >= MAX_ATTEMPTS) return;
+          if (cancelled) return;
+          if (attempt >= MAX_ATTEMPTS) { setConfigExhausted(true); return; }
           setTimeout(() => loadConfig(attempt + 1), RETRY_INTERVAL_MS);
         });
     };
     loadConfig();
-    return () => { cancelled = true; };
-  }, [API]);
+    return () => { cancelled = true; clearTimeout(slowTimer); };
+  }, [API, configRetryToken]);
+
+  const retryConfig = () => {
+    setConfigExhausted(false);
+    setConfigSlow(false);
+    setConfigRetryToken((n) => n + 1);
+  };
 
   const touch = (field) => setTouched((t) => ({ ...t, [field]: true }));
 
@@ -216,6 +257,7 @@ export default function Login({ API, onAuthenticated }) {
     inFlightRef.current = true;
     setSubmitting(true);
     setButtonLoading(true);
+    const slowTimer = setTimeout(() => setSubmitSlow(true), SLOW_HINT_DELAY_MS);
     try {
       const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/signup";
       const res = await fetch(`${API}${endpoint}`, {
@@ -234,8 +276,10 @@ export default function Login({ API, onAuthenticated }) {
       setFormError("Can't reach the server. Check your connection and try again.");
       shakeButton();
     } finally {
+      clearTimeout(slowTimer);
       inFlightRef.current = false;
       setSubmitting(false);
+      setSubmitSlow(false);
       setButtonLoading(false);
     }
   };
@@ -246,6 +290,7 @@ export default function Login({ API, onAuthenticated }) {
     guestInFlightRef.current = true;
     setGuestLoading(true);
     setGuestError("");
+    const slowTimer = setTimeout(() => setGuestSlow(true), SLOW_HINT_DELAY_MS);
     try {
       const res = await fetch(`${API}/api/auth/guest`, { method: "POST" });
       const data = await res.json().catch(() => ({}));
@@ -257,8 +302,10 @@ export default function Login({ API, onAuthenticated }) {
     } catch (err) {
       setGuestError("Can't reach the server. Check your connection and try again.");
     } finally {
+      clearTimeout(slowTimer);
       guestInFlightRef.current = false;
       setGuestLoading(false);
+      setGuestSlow(false);
     }
   };
 
@@ -402,6 +449,11 @@ export default function Login({ API, onAuthenticated }) {
                 <span style={{ width: 15, height: 15, border: "2px solid rgba(255,255,255,0.35)", borderTop: "2px solid #ffffff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
               </span>
             </button>
+            {submitSlow && (
+              <div role="status" style={{ marginTop: 10, textAlign: "center", color: "var(--text3)", fontSize: 12, lineHeight: 1.4 }}>
+                {slowHint}
+              </div>
+            )}
           </form>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 18 }}>
@@ -443,8 +495,29 @@ export default function Login({ API, onAuthenticated }) {
               <div style={{ textAlign: "center", marginTop: 6, fontSize: 11, color: "var(--text3)" }}>
                 Browse a live demo, read-only, no account needed.
               </div>
+              {guestSlow && (
+                <div role="status" style={{ marginTop: 6, textAlign: "center", color: "var(--text3)", fontSize: 12, lineHeight: 1.4 }}>
+                  {slowHint}
+                </div>
+              )}
               <FieldError>{guestError}</FieldError>
             </>
+          )}
+
+          {!guestModeEnabled && configSlow && !configExhausted && (
+            <div role="status" style={{ marginTop: 20, textAlign: "center", color: "var(--text3)", fontSize: 12, lineHeight: 1.5 }}>
+              {slowHint}<br />Guest mode will appear here once it's ready.
+            </div>
+          )}
+
+          {!guestModeEnabled && configExhausted && (
+            <div role="alert" style={{ marginTop: 20, textAlign: "center", color: "var(--text3)", fontSize: 12, lineHeight: 1.5 }}>
+              Couldn't reach the server to check Guest Mode.
+              <br />
+              <button type="button" onClick={retryConfig} style={{ background: "none", border: "none", padding: 0, marginTop: 2, color: "var(--text3)", fontSize: 12, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}>
+                Try again
+              </button>
+            </div>
           )}
 
           <div style={{ textAlign: "center", marginTop: 28, fontSize: 11, color: "var(--text3)" }}>
