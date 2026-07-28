@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { authHeaders, invalidateCache } from "../utils/api";
 import useBreakpoint from "../hooks/useBreakpoint";
@@ -35,8 +35,15 @@ const qfield = { padding: "8px 10px", borderRadius: 7, border: "1px solid var(--
 export default function Pipeline({ API, pageAction, clearAction, openDealId, clearOpenDeal, isGuest }) {
   const { isMobile } = useBreakpoint();
   const [deals, setDeals] = useState([]);
-  const [draggingId, setDraggingId] = useState(null);
   const [overStage, setOverStage] = useState(null);
+  // Native HTML5 drag-and-drop only reliably fires dragend -- a short/fast
+  // drag can have the browser abort the operation (no drop) even when the
+  // cursor ends up over a valid column, silently dropping the move. Refs so
+  // dragend always reads the latest values instead of a closure captured
+  // before the last dragover's re-render landed.
+  const draggingIdRef = useRef(null);
+  const overStageRef = useRef(null);
+  const droppedRef = useRef(false);
   const [selected, setSelected] = useState(null);
   const [draft, setDraft] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -170,8 +177,14 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
     const overdue = d.next_action_date && d.next_action_date <= todayISO() && d.status === "open";
     return (
       <div key={d.id} draggable={!isMobile && !isGuest}
-        onDragStart={() => setDraggingId(d.id)}
-        onDragEnd={() => { setDraggingId(null); setOverStage(null); }}
+        onDragStart={() => { draggingIdRef.current = d.id; droppedRef.current = false; }}
+        onDragEnd={() => {
+          if (!droppedRef.current && draggingIdRef.current != null && overStageRef.current != null) {
+            moveDeal(draggingIdRef.current, overStageRef.current);
+          }
+          draggingIdRef.current = null; overStageRef.current = null;
+          setOverStage(null);
+        }}
         onClick={() => openDeal(d)}
         style={{ background: "var(--card)", border: "1px solid var(--border2)", borderRadius: 10, padding: "12px 13px", marginBottom: 10, cursor: isMobile ? "pointer" : "grab", opacity: d.status === "lost" ? 0.6 : 1 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -213,8 +226,14 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
     const total = colDeals.reduce((s, d) => s + (d.value || 0), 0);
     return (
       <div key={stage}
-        onDragOver={(e) => { e.preventDefault(); setOverStage(stage); }}
-        onDrop={(e) => { e.preventDefault(); if (draggingId != null) moveDeal(draggingId, stage); setDraggingId(null); setOverStage(null); }}
+        onDragOver={(e) => { e.preventDefault(); overStageRef.current = stage; setOverStage(stage); }}
+        onDrop={(e) => {
+          e.preventDefault();
+          droppedRef.current = true;
+          if (draggingIdRef.current != null) moveDeal(draggingIdRef.current, stage);
+          draggingIdRef.current = null; overStageRef.current = null;
+          setOverStage(null);
+        }}
         style={{ flex: "0 0 220px", background: overStage === stage ? "var(--hover2)" : "transparent", borderRadius: 10, padding: "6px 6px 10px", transition: "background .12s" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3, padding: "0 4px" }}>
           <span style={{ width: 8, height: 8, borderRadius: "50%", background: STAGE_DOT[stage] }} />
