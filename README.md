@@ -1,8 +1,6 @@
 <div align="center">
 
-<img src="./assets/retainiq-banner.svg" alt="RetainIQ" width="100%" />
-
-### Know who's leaving. Reach them first.
+<img src="assets/RetainIQ_Banner.png" alt="RetainIQ" width="600">
 
 <p align="center">
   <a href="https://retainiq-thunderhacks-2026.vercel.app/"><strong>Live Demo</strong></a>
