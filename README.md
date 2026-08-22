@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/RetainIQ_Banner.png" alt="RetainIQ" width="600">
+<img src="assets/RetainIQ_Banner.png" alt="RetainIQ" width="750">
 
 <p align="center">
   <a href="https://retainiq-thunderhacks-2026.vercel.app/"><strong>Live Demo</strong></a>
