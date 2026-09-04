@@ -382,11 +382,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
       </div>
       <div style={{ color: "var(--text2)", fontSize: 15, marginBottom: 20 }}>{isMobile ? "Tap a deal to open it, or move it to a stage below" : "Drag deals between stages"} · {fmtBig(openValue)} open across pipeline</div>
 
-      {/* minHeight: columns already stretch to match each other (default align-items:
-          stretch), but with few deals total the row itself used to shrink-wrap to its
-          tallest column -- leaving page background below that reads as board but isn't,
-          so a drop released there silently missed every column's onDrop. */}
-      <div style={{ minHeight: "65vh", display: "flex", gap: 14, overflowX: "auto", paddingBottom: 10, WebkitOverflowScrolling: "touch" }}>
+      <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 10, WebkitOverflowScrolling: "touch" }}>
         {STAGES.map(column)}
       </div>
 
