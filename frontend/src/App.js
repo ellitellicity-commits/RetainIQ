@@ -68,12 +68,18 @@ export default function App() {
     if (!authToken) { setAuthChecked(true); return; }
     let cancelled = false;
     fetch(`${API}/api/auth/me`, { headers: { Authorization: `Bearer ${authToken}` } })
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((res) => {
+        if (res.ok) return res.json();
+        if (res.status === 401) return Promise.reject({ clearToken: true });
+        return Promise.reject({ clearToken: false });
+      })
       .then((data) => { if (!cancelled) setAuthUser(data.user); })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
-        try { localStorage.removeItem("riq_auth_token"); } catch (e) {}
-        setAuthToken(null);
+        if (err && err.clearToken) {
+          try { localStorage.removeItem("riq_auth_token"); } catch (e) {}
+          setAuthToken(null);
+        }
       })
       .finally(() => { if (!cancelled) setAuthChecked(true); });
     return () => { cancelled = true; };
