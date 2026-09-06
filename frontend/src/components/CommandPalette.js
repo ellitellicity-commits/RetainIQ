@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Command } from "cmdk";
-import { QUICK_ACTIONS } from "../data/mockData";
+import { QUICK_ACTIONS } from "../data/quickActions";
 
 const SEARCHABLE = [
   { type: "client", label: "TD Bank", subtitle: "Client • Negotiation • $150K", page: "customers" },

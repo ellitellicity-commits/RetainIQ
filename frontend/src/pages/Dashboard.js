@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import CountUp from "../components/CountUp";
 import { cardHoverProps } from "../utils/cardHover";
@@ -34,26 +34,32 @@ export default function Dashboard({ API }) {
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
-    fetch(`${API}/api/db/stats`, { headers: authHeaders() }).then(r => r.json()).then(setStats);
+    cachedGetJson(`${API}/api/db/stats`).then(setStats);
     cachedGetJson(`${API}/api/db/clients`).then(setCustomers);
   }, [API]);
+
+  const { criticalCount, atRiskCount, healthyCount } = useMemo(() => {
+    let critical = 0, atRisk = 0, healthy = 0;
+    for (const c of customers) {
+      if (c.journey_stage === "Expired" || c.journey_stage === "Critical") critical++;
+      else if (c.journey_stage === "At-Risk") atRisk++;
+      else if (c.journey_stage === "Active") healthy++;
+    }
+    return { criticalCount: critical, atRiskCount: atRisk, healthyCount: healthy };
+  }, [customers]);
+
+  const filtered = useMemo(() => customers.filter(c => {
+    if (filter === "critical") return c.journey_stage === "Expired" || c.journey_stage === "Critical";
+    if (filter === "atrisk")   return c.journey_stage === "At-Risk";
+    if (filter === "healthy")  return c.journey_stage === "Active";
+    return true;
+  }), [customers, filter]);
 
   if (!stats) return (
     <div style={{ color: "var(--text3)", fontFamily: "Inter", fontSize: 15, paddingTop: 60, textAlign: "center" }}>
       Loading…
     </div>
   );
-
-  const filtered = customers.filter(c => {
-    if (filter === "critical") return c.journey_stage === "Expired" || c.journey_stage === "Critical";
-    if (filter === "atrisk")   return c.journey_stage === "At-Risk";
-    if (filter === "healthy")  return c.journey_stage === "Active";
-    return true;
-  });
-
-  const criticalCount = customers.filter(c => c.journey_stage === "Expired" || c.journey_stage === "Critical").length;
-  const atRiskCount = customers.filter(c => c.journey_stage === "At-Risk").length;
-  const healthyCount = customers.filter(c => c.journey_stage === "Active").length;
   const compositionTotal = Math.max(1, criticalCount + atRiskCount + healthyCount);
   const composition = [
     { label: "Critical", count: criticalCount, color: "var(--red)" },

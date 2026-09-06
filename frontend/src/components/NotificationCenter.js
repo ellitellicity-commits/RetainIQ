@@ -25,6 +25,7 @@ export default function NotificationCenter({ API, isGuest }) {
 
   useEffect(() => {
     const loadNotifications = () => {
+      if (document.hidden) return;
       fetch(`${API}/api/db/notifications`, { headers: authHeaders() }).then(r => r.json()).then(d => setNotifications(Array.isArray(d) ? d : [])).catch(() => {});
     };
     loadNotifications();

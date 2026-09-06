@@ -2,6 +2,7 @@ import sqlite3
 import os
 import csv
 import json
+from flask import g
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "retainiq.db")
@@ -10,6 +11,26 @@ def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def get_request_conn():
+    if "db_conn" not in g:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.execute("PRAGMA journal_mode = WAL")
+        g.db_conn = conn
+    return g.db_conn
+
+
+def close_request_conn(exception=None):
+    conn = g.pop("db_conn", None)
+    if conn is not None:
+        conn.close()
+
+
+def register_db_teardown(app):
+    app.teardown_appcontext(close_request_conn)
 
 def init_db():
     conn = get_db()
@@ -188,6 +209,16 @@ def init_db():
             source TEXT DEFAULT 'seed'
         )
     ''')
+
+    c.execute("CREATE INDEX IF NOT EXISTS idx_contracts_client_id ON contracts(client_id)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_contracts_expiry_date ON contracts(expiry_date)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_pipeline_deals_company ON pipeline_deals(company)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_pipeline_deals_client_id ON pipeline_deals(client_id)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_pipeline_deals_status ON pipeline_deals(status)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_activities_client_id ON activities(client_id)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_activities_date ON activities(date)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_quote_items_deal_id ON quote_items(deal_id)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_extra_fields_client_id ON extra_fields(client_id)")
 
     conn.commit()
     conn.close()

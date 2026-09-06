@@ -1,23 +1,14 @@
 from flask import Blueprint, request, jsonify
-import sqlite3, os
 from datetime import datetime
+from database import get_db, get_request_conn
 from activities_api import log_activity
 from auth_api import require_auth, require_write_access
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "retainiq.db")
 
 quotes_bp = Blueprint("quotes_bp", __name__)
 
 
-def get_conn():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
 def ensure_schema():
-    conn = get_conn()
+    conn = get_db()
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS quote_items (
@@ -36,16 +27,10 @@ def ensure_schema():
     ]:
         try:
             c.execute(ddl)
-        except sqlite3.OperationalError:
+        except Exception:
             pass
     conn.commit()
     conn.close()
-
-
-try:
-    ensure_schema()
-except Exception as e:
-    print("[quotes] schema init note:", e)
 
 
 def quote_total_for(c, deal_id, discount):
@@ -60,7 +45,7 @@ def quote_total_for(c, deal_id, discount):
 @quotes_bp.route("/api/db/quote/<int:deal_id>", methods=["GET"])
 @require_auth
 def get_quote(deal_id):
-    conn = get_conn()
+    conn = get_request_conn()
     c = conn.cursor()
     row = c.execute(
         "SELECT quote_discount, quote_status FROM pipeline_deals WHERE id = ?",
@@ -72,7 +57,6 @@ def get_quote(deal_id):
         "SELECT id, description, quantity, unit_price FROM quote_items WHERE deal_id = ? ORDER BY sort_order, id",
         (deal_id,),
     ).fetchall()
-    conn.close()
     return jsonify({
         "deal_id": deal_id,
         "discount": discount,
@@ -91,7 +75,7 @@ def save_quote(deal_id):
     except (TypeError, ValueError):
         discount = 0
 
-    conn = get_conn()
+    conn = get_request_conn()
     c = conn.cursor()
     c.execute("DELETE FROM quote_items WHERE deal_id = ?", (deal_id,))
     for idx, it in enumerate(items):
@@ -123,7 +107,6 @@ def save_quote(deal_id):
         "SELECT id, description, quantity, unit_price FROM quote_items WHERE deal_id = ? ORDER BY sort_order, id",
         (deal_id,),
     ).fetchall()
-    conn.close()
 
     if just_created and deal:
         log_activity(
@@ -144,7 +127,7 @@ def save_quote(deal_id):
 @quotes_bp.route("/api/db/quote/<int:deal_id>/send", methods=["POST"])
 @require_write_access
 def send_quote(deal_id):
-    conn = get_conn()
+    conn = get_request_conn()
     c = conn.cursor()
     row = c.execute("SELECT quote_discount, company, client_id, owner FROM pipeline_deals WHERE id = ?", (deal_id,)).fetchone()
     discount = row["quote_discount"] if row and row["quote_discount"] is not None else 0
@@ -155,7 +138,6 @@ def send_quote(deal_id):
         (total, "Quote sent", now, "open", "sent", now, deal_id),
     )
     conn.commit()
-    conn.close()
 
     if row:
         log_activity(
@@ -182,26 +164,32 @@ def quotes_list():
     Clients drawer). Without it, returns every quote across every deal
     (used by the standalone Quotes page)."""
     company = (request.args.get("company") or "").strip()
-    conn = get_conn()
+    conn = get_request_conn()
     c = conn.cursor()
+
+    base_sql = """
+        SELECT d.id, d.company, d.stage, d.value, d.quote_discount, d.quote_status,
+               d.quote_sent_at, d.expected_close_date, d.owner,
+               COALESCE(SUM(qi.quantity * qi.unit_price), 0) AS subtotal,
+               COUNT(qi.id) AS item_count
+        FROM pipeline_deals d
+        LEFT JOIN quote_items qi ON qi.deal_id = d.id
+    """
     if company:
-        deals = c.execute(
-            "SELECT id, company, stage, value, quote_discount, quote_status, quote_sent_at, expected_close_date, owner "
-            "FROM pipeline_deals WHERE LOWER(TRIM(company)) = LOWER(TRIM(?))",
-            (company,),
-        ).fetchall()
+        base_sql += " WHERE LOWER(TRIM(d.company)) = LOWER(TRIM(?))"
+        rows = c.execute(base_sql + " GROUP BY d.id", (company,)).fetchall()
     else:
-        deals = c.execute(
-            "SELECT id, company, stage, value, quote_discount, quote_status, quote_sent_at, expected_close_date, owner "
-            "FROM pipeline_deals"
-        ).fetchall()
+        rows = c.execute(base_sql + " GROUP BY d.id").fetchall()
+
     out = []
-    for d in deals:
+    for d in rows:
         discount = d["quote_discount"] or 0
-        subtotal, total, item_count = quote_total_for(c, d["id"], discount)
+        subtotal = d["subtotal"] or 0
+        item_count = d["item_count"] or 0
+        total = subtotal * (1 - discount / 100.0)
         status = d["quote_status"] or "none"
         if status == "none" and item_count == 0:
-            continue  # no quote on this deal yet
+            continue
         out.append({
             "deal_id": d["id"],
             "company": d["company"],
@@ -215,5 +203,4 @@ def quotes_list():
             "sent_at": d["quote_sent_at"],
             "owner": d["owner"],
         })
-    conn.close()
     return jsonify(out)

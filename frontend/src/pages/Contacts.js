@@ -15,7 +15,7 @@ export default function Contacts({ API }) {
 
   useEffect(() => {
     Promise.all([
-      fetch(`${API}/api/db/contacts`, { headers: authHeaders() }).then(r => r.json()).catch(() => []),
+      cachedGetJson(`${API}/api/db/contacts`).catch(() => []),
       cachedGetJson(`${API}/api/db/clients`).catch(() => []),
     ]).then(([cts, cls]) => {
       setContacts(Array.isArray(cts) ? cts : []);
@@ -29,19 +29,21 @@ export default function Contacts({ API }) {
 
   const companies = [...new Set(contacts.map(c => nameFor(c.client_id)).filter(n => n && n !== "—"))].sort();
 
-  let list = contacts.slice();
-  if (primaryOnly) list = list.filter(c => c.is_primary);
-  if (company !== "all") list = list.filter(c => nameFor(c.client_id) === company);
-  if (search.trim()) {
-    const q = search.toLowerCase();
-    list = list.filter(c =>
-      (c.name || "").toLowerCase().includes(q) ||
-      (c.email || "").toLowerCase().includes(q) ||
-      (c.title || "").toLowerCase().includes(q) ||
-      nameFor(c.client_id).toLowerCase().includes(q)
-    );
-  }
-  list = [...list].sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0) || (a.name || "").localeCompare(b.name || ""));
+  const list = useMemo(() => {
+    let result = contacts.slice();
+    if (primaryOnly) result = result.filter(c => c.is_primary);
+    if (company !== "all") result = result.filter(c => nameFor(c.client_id) === company);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(c =>
+        (c.name || "").toLowerCase().includes(q) ||
+        (c.email || "").toLowerCase().includes(q) ||
+        (c.title || "").toLowerCase().includes(q) ||
+        nameFor(c.client_id).toLowerCase().includes(q)
+      );
+    }
+    return [...result].sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0) || (a.name || "").localeCompare(b.name || ""));
+  }, [contacts, primaryOnly, company, search, clients]);
 
   const activeFilters = search.trim() || company !== "all" || primaryOnly;
   const clearFilters = () => { setSearch(""); setCompany("all"); setPrimaryOnly(false); };

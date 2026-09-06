@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { authHeaders, invalidateCache } from "../utils/api";
+import { authHeaders, invalidateCache, cachedGetJson } from "../utils/api";
 import useBreakpoint from "../hooks/useBreakpoint";
 
 const STAGES = ["New Leads", "Qualified", "Demo", "Quote sent", "Negotiation", "Closed-Won", "Closed-Lost"];
@@ -57,7 +57,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
   const [quoteSending, setQuoteSending] = useState(false);
   const [quoteMsg, setQuoteMsg] = useState("");
 
-  const load = () => fetch(`${API}/api/db/deals`, { headers: authHeaders() }).then(r => r.json()).then(setDeals).catch(() => setDeals([]));
+  const load = () => cachedGetJson(`${API}/api/db/deals`).then(setDeals).catch(() => setDeals([]));
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -221,8 +221,15 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
     );
   };
 
+  const dealsByStage = useMemo(() => {
+    const map = {};
+    STAGES.forEach(s => { map[s] = []; });
+    deals.forEach(d => { if (map[d.stage]) map[d.stage].push(d); });
+    return map;
+  }, [deals]);
+
   const column = (stage) => {
-    const colDeals = deals.filter(d => d.stage === stage);
+    const colDeals = dealsByStage[stage] || [];
     const total = colDeals.reduce((s, d) => s + (d.value || 0), 0);
     return (
       <div key={stage}

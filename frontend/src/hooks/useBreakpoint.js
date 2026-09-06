@@ -14,9 +14,13 @@ export default function useBreakpoint() {
   );
 
   useEffect(() => {
-    const handler = () => setBreakpoint(computeBreakpoint(window.innerWidth));
+    let timeoutId;
+    const handler = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => setBreakpoint(computeBreakpoint(window.innerWidth)), 150);
+    };
     window.addEventListener("resize", handler);
-    return () => window.removeEventListener("resize", handler);
+    return () => { window.removeEventListener("resize", handler); clearTimeout(timeoutId); };
   }, []);
 
   return {

@@ -1,12 +1,10 @@
-import os, json, re, sqlite3, contextvars
+import os, json, re, contextvars
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 import httpx
 from flask import Blueprint, request, jsonify, current_app
+from database import get_request_conn
 from activities_api import log_activity
 from auth_api import require_auth, require_write_access
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "retainiq.db")
 
 chatbot_bp = Blueprint("chatbot_bp", __name__)
 
@@ -118,10 +116,6 @@ TOOLS = [
 ]
 
 
-def get_conn():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
 
 
 def resolve_client_by_company(conn, company):
@@ -202,14 +196,10 @@ def build_context():
 
 def _groq_client():
     from groq import Groq
-    from dotenv import load_dotenv
-    load_dotenv()
     return Groq(api_key=os.environ.get("GROQ_API_KEY"), timeout=EXTERNAL_CALL_TIMEOUT_SECONDS, max_retries=1)
 
 
 def _tavily_search(query):
-    from dotenv import load_dotenv
-    load_dotenv()
     api_key = os.environ.get("TAVILY_API_KEY")
     if not api_key or not query:
         return None
@@ -339,104 +329,102 @@ def _handle_chatbot(message, history):
     name = call.function.name
     company = (args.get("company") or "").strip()
 
-    conn = get_conn()
-    try:
-        if name == "draft_email":
-            row = resolve_client_by_company(conn, company)
-            if not row:
-                return {"type": "answer", "content": f"I couldn't find a client called \"{company}\"."}
-            auth_headers = _forward_auth_header()
-            client_row = next((c for c in current_app.test_client().get("/api/db/clients", headers=auth_headers).get_json() if c["id"] == row["id"]), {})
-            resp = current_app.test_client().post("/api/email", headers=auth_headers, json={
-                "customer_name": row["company_name"],
-                "risk_score": client_row.get("churn_risk_score"),
-                "spend": client_row.get("contract_value"),
-                "days_since_contact": client_row.get("days_since_contact"),
-            })
-            email = resp.get_json() or {}
-            content = f"Subject: {email.get('subject', '')}\n\n{email.get('body', '')}"
-            return {"type": "action_result", "tool": "draft_email", "content": content}
+    conn = get_request_conn()
 
-        if name == "log_activity":
-            row = resolve_client_by_company(conn, company)
-            if not row:
-                return {"type": "answer", "content": f"I couldn't find a client called \"{company}\"."}
-            activity_type = args.get("type") if args.get("type") in ("call", "meeting") else "call"
-            return {
-                "type": "action_proposal",
-                "tool": "log_activity",
-                "args": {"client_id": row["id"], "company": row["company_name"], "type": activity_type, "notes": args.get("notes") or ""},
-                "summary": f"Log a {activity_type} with {row['company_name']}: “{args.get('notes') or ''}”",
-            }
+    if name == "draft_email":
+        row = resolve_client_by_company(conn, company)
+        if not row:
+            return {"type": "answer", "content": f"I couldn't find a client called \"{company}\"."}
+        auth_headers = _forward_auth_header()
+        client_row = next((c for c in current_app.test_client().get("/api/db/clients", headers=auth_headers).get_json() if c["id"] == row["id"]), {})
+        resp = current_app.test_client().post("/api/email", headers=auth_headers, json={
+            "customer_name": row["company_name"],
+            "risk_score": client_row.get("churn_risk_score"),
+            "spend": client_row.get("contract_value"),
+            "days_since_contact": client_row.get("days_since_contact"),
+        })
+        email = resp.get_json() or {}
+        content = f"Subject: {email.get('subject', '')}\n\n{email.get('body', '')}"
+        return {"type": "action_result", "tool": "draft_email", "content": content}
 
-        if name == "web_search":
-            query = (args.get("query") or "").strip()
-            if not query:
-                return {"type": "answer", "content": "I wasn't sure what to search for -- can you rephrase?"}
+    if name == "log_activity":
+        row = resolve_client_by_company(conn, company)
+        if not row:
+            return {"type": "answer", "content": f"I couldn't find a client called \"{company}\"."}
+        activity_type = args.get("type") if args.get("type") in ("call", "meeting") else "call"
+        return {
+            "type": "action_proposal",
+            "tool": "log_activity",
+            "args": {"client_id": row["id"], "company": row["company_name"], "type": activity_type, "notes": args.get("notes") or ""},
+            "summary": f"Log a {activity_type} with {row['company_name']}: \"{args.get('notes') or ''}\"",
+        }
 
-            search = _tavily_search(query)
-            if not search or (not search["answer"] and not search["results"]):
-                return {
-                    "type": "answer",
-                    "content": "Web search isn't available right now, so I can only answer from what's in the CRM.",
-                }
+    if name == "web_search":
+        query = (args.get("query") or "").strip()
+        if not query:
+            return {"type": "answer", "content": "I wasn't sure what to search for -- can you rephrase?"}
 
-            sources = search["results"][:5]
-            tool_result_text = (search["answer"] + "\n\n" if search["answer"] else "") + "\n".join(
-                f"- {r['title']} ({r['url']}): {r['content'][:400]}" for r in sources
-            )
-
-            follow_up_messages = messages + [
-                {
-                    "role": "assistant",
-                    "content": msg.content,
-                    "tool_calls": [
-                        {"id": call.id, "type": "function", "function": {"name": "web_search", "arguments": call.function.arguments}}
-                    ],
-                },
-                {"role": "tool", "tool_call_id": call.id, "content": tool_result_text},
-            ]
-
-            try:
-                groq_client = _groq_client()
-                follow_up = groq_client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=follow_up_messages,
-                    max_tokens=600,
-                )
-                summary = follow_up.choices[0].message.content or tool_result_text
-            except Exception as e:
-                print("[chatbot] Groq follow-up call failed:", e)
-                summary = tool_result_text
-
+        search = _tavily_search(query)
+        if not search or (not search["answer"] and not search["results"]):
             return {
                 "type": "answer",
-                "content": summary,
-                "searched_for": query,
-                "sources": [{"title": r["title"], "url": r["url"]} for r in sources],
+                "content": "Web search isn't available right now, so I can only answer from what's in the CRM.",
             }
 
-        if name == "move_deal_stage":
-            deals = resolve_open_deals_by_company(conn, company)
-            if not deals:
-                return {"type": "answer", "content": f"I couldn't find an open deal for \"{company}\"."}
-            stage = args.get("stage")
-            if stage not in STAGES:
-                return {"type": "answer", "content": f"\"{stage}\" isn't a valid deal stage."}
-            if len(deals) > 1:
-                listing = "; ".join(f"{d['product'] or 'deal #' + str(d['id'])} (currently {d['stage']})" for d in deals)
-                return {"type": "answer", "content": f"{company} has more than one open deal: {listing}. Which one do you mean?"}
-            deal = deals[0]
-            return {
-                "type": "action_proposal",
-                "tool": "move_deal_stage",
-                "args": {"deal_id": deal["id"], "company": deal["company"], "stage": stage},
-                "summary": f"Move {deal['company']}'s deal from {deal['stage']} to {stage}",
-            }
+        sources = search["results"][:5]
+        tool_result_text = (search["answer"] + "\n\n" if search["answer"] else "") + "\n".join(
+            f"- {r['title']} ({r['url']}): {r['content'][:400]}" for r in sources
+        )
 
-        return {"type": "answer", "content": "I tried to do something I don't know how to do yet."}
-    finally:
-        conn.close()
+        follow_up_messages = messages + [
+            {
+                "role": "assistant",
+                "content": msg.content,
+                "tool_calls": [
+                    {"id": call.id, "type": "function", "function": {"name": "web_search", "arguments": call.function.arguments}}
+                ],
+            },
+            {"role": "tool", "tool_call_id": call.id, "content": tool_result_text},
+        ]
+
+        try:
+            groq_client = _groq_client()
+            follow_up = groq_client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=follow_up_messages,
+                max_tokens=600,
+            )
+            summary = follow_up.choices[0].message.content or tool_result_text
+        except Exception as e:
+            print("[chatbot] Groq follow-up call failed:", e)
+            summary = tool_result_text
+
+        return {
+            "type": "answer",
+            "content": summary,
+            "searched_for": query,
+            "sources": [{"title": r["title"], "url": r["url"]} for r in sources],
+        }
+
+    if name == "move_deal_stage":
+        deals = resolve_open_deals_by_company(conn, company)
+        if not deals:
+            return {"type": "answer", "content": f"I couldn't find an open deal for \"{company}\"."}
+        stage = args.get("stage")
+        if stage not in STAGES:
+            return {"type": "answer", "content": f"\"{stage}\" isn't a valid deal stage."}
+        if len(deals) > 1:
+            listing = "; ".join(f"{d['product'] or 'deal #' + str(d['id'])} (currently {d['stage']})" for d in deals)
+            return {"type": "answer", "content": f"{company} has more than one open deal: {listing}. Which one do you mean?"}
+        deal = deals[0]
+        return {
+            "type": "action_proposal",
+            "tool": "move_deal_stage",
+            "args": {"deal_id": deal["id"], "company": deal["company"], "stage": stage},
+            "summary": f"Move {deal['company']}'s deal from {deal['stage']} to {stage}",
+        }
+
+    return {"type": "answer", "content": "I tried to do something I don't know how to do yet."}
 
 
 @chatbot_bp.route("/api/chatbot/confirm", methods=["POST"])
@@ -446,30 +434,28 @@ def chatbot_confirm():
     tool = data.get("tool")
     args = data.get("args") or {}
 
-    conn = get_conn()
-    try:
-        if tool == "log_activity":
-            client_id = args.get("client_id")
-            row = conn.execute("SELECT id, company_name FROM clients WHERE id = ?", (client_id,)).fetchone()
-            if not row:
-                return jsonify({"success": False, "message": "Couldn't find that client anymore."})
-            activity_type = args.get("type") if args.get("type") in ("call", "meeting") else "call"
-            log_activity(client_id=row["id"], type=activity_type, notes=args.get("notes") or "")
-            return jsonify({"success": True, "message": f"Logged a {activity_type} with {row['company_name']}."})
+    conn = get_request_conn()
 
-        if tool == "move_deal_stage":
-            deal_id = args.get("deal_id")
-            deal = conn.execute("SELECT id, company, stage FROM pipeline_deals WHERE id = ?", (deal_id,)).fetchone()
-            if not deal:
-                return jsonify({"success": False, "message": "Couldn't find that deal anymore."})
-            stage = args.get("stage")
-            if stage not in STAGES:
-                return jsonify({"success": False, "message": f"\"{stage}\" isn't a valid deal stage."})
-            resp = current_app.test_client().patch(f"/api/db/deals/{deal['id']}", headers=_forward_auth_header(), json={"stage": stage})
-            if resp.status_code != 200:
-                return jsonify({"success": False, "message": "Couldn't update that deal."})
-            return jsonify({"success": True, "message": f"Moved {deal['company']}'s deal to {stage}."})
+    if tool == "log_activity":
+        client_id = args.get("client_id")
+        row = conn.execute("SELECT id, company_name FROM clients WHERE id = ?", (client_id,)).fetchone()
+        if not row:
+            return jsonify({"success": False, "message": "Couldn't find that client anymore."})
+        activity_type = args.get("type") if args.get("type") in ("call", "meeting") else "call"
+        log_activity(client_id=row["id"], type=activity_type, notes=args.get("notes") or "")
+        return jsonify({"success": True, "message": f"Logged a {activity_type} with {row['company_name']}."})
 
-        return jsonify({"success": False, "message": "Unknown action."}), 400
-    finally:
-        conn.close()
+    if tool == "move_deal_stage":
+        deal_id = args.get("deal_id")
+        deal = conn.execute("SELECT id, company, stage FROM pipeline_deals WHERE id = ?", (deal_id,)).fetchone()
+        if not deal:
+            return jsonify({"success": False, "message": "Couldn't find that deal anymore."})
+        stage = args.get("stage")
+        if stage not in STAGES:
+            return jsonify({"success": False, "message": f"\"{stage}\" isn't a valid deal stage."})
+        resp = current_app.test_client().patch(f"/api/db/deals/{deal['id']}", headers=_forward_auth_header(), json={"stage": stage})
+        if resp.status_code != 200:
+            return jsonify({"success": False, "message": "Couldn't update that deal."})
+        return jsonify({"success": True, "message": f"Moved {deal['company']}'s deal to {stage}."})
+
+    return jsonify({"success": False, "message": "Unknown action."}), 400

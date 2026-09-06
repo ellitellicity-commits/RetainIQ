@@ -2,13 +2,18 @@ import os
 import random
 import time
 from functools import wraps
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from model import load_and_train, get_dataframe, score_new_customer, _assign_stage
-from database import get_db, init_db, seed_if_empty, ensure_todays_retention_snapshot
+from database import get_db, init_db, seed_if_empty, ensure_todays_retention_snapshot, register_db_teardown
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY")
+register_db_teardown(app)
 
 from auth_api import auth_bp, require_auth, require_write_access
 app.register_blueprint(auth_bp)
@@ -17,18 +22,20 @@ app.register_blueprint(contacts_bp)
 from quotes_api import quotes_bp, ensure_schema as ensure_quotes_schema
 app.register_blueprint(quotes_bp)
 
-
 from deals_api import deals_bp
 app.register_blueprint(deals_bp)
 
-from activities_api import activities_bp
+from activities_api import activities_bp, ensure_schema as ensure_activities_schema
 app.register_blueprint(activities_bp)
-from notifications_api import notifications_bp
+from notifications_api import notifications_bp, ensure_schema as ensure_notifications_schema
 app.register_blueprint(notifications_bp)
+from contacts_api import ensure_schema as ensure_contacts_schema
+from deals_api import ensure_schema as ensure_deals_schema
 from chatbot_api import chatbot_bp
 app.register_blueprint(chatbot_bp)
 
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+_ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+CORS(app, resources={r"/api/*": {"origins": _ALLOWED_ORIGINS}})
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CSV_PATH = os.path.join(BASE_DIR, "clients.csv")
@@ -76,8 +83,6 @@ def ensure_model_loaded():
 
 def generate_template_email(name, plan, spend, days_no_contact, risk_score, days_until_expiry=None, software=None, contract_expiry=None, account_manager=None):
     from groq import Groq
-    from dotenv import load_dotenv
-    load_dotenv()
 
     first_name = name.split()[0] if name else "Client"
     sender = account_manager or random.choice(["Sarah Mitchell", "James Okafor", "Priya Sharma", "Marcus Chen"])
@@ -167,108 +172,6 @@ BODY:
         )
         return subject, body
 
-    senders = ["Sarah", "James", "Priya", "Marcus", "Elena", "David"]
-    sender = random.choice(senders)
-
-    titles = [
-        "Customer Success Manager",
-        "Account Manager",
-        "Client Relations Specialist",
-        "Customer Experience Lead",
-    ]
-    title = random.choice(titles)
-
-    openers = [
-        "I hope you're having a great week so far!",
-        "I was just thinking about our customers and wanted to personally reach out.",
-        "Quick note from me — I wanted to check in and see how things are going on your end.",
-        "I noticed it's been a little while since we last connected and wanted to say hi.",
-        "Hope things are going well! I wanted to take a moment to reach out personally.",
-        "Just dropping a quick note to check in — we really value having you with us.",
-    ]
-
-    if days_no_contact > 30:
-        opener = random.choice([
-            "I realized it's been a while since we last touched base, and I didn't want too much more time to pass without checking in.",
-            "I noticed we haven't connected in a bit — I hope everything has been going smoothly on your end!",
-            f"Time flies! I can't believe it's been {days_no_contact} days since we last spoke. I wanted to reach out personally.",
-        ])
-    else:
-        opener = random.choice(openers)
-
-    if spend < 100:
-        offers = [
-            f"I'd love to walk you through some of the newer features on your {plan} plan that you might not have had a chance to explore yet.",
-            "I think there might be a better fit for what you're trying to accomplish — would love to chat about your options.",
-            "We've recently added some great new features that I think could make a real difference for you.",
-        ]
-    elif plan == "Enterprise":
-        offers = [
-            "As one of our Enterprise customers, I want to make sure you're getting the absolute most out of everything available to you.",
-            "I wanted to personally check that your team has everything they need and that we're meeting your expectations.",
-            "Your success is really important to us — I'd love to hear how things have been going and if there's anything we can improve.",
-        ]
-    else:
-        offers = [
-            f"I wanted to make sure you're getting the most out of your {plan} plan and that everything is running smoothly.",
-            "We've been rolling out some improvements lately and I wanted to make sure you're aware of everything available to you.",
-            "I'd love to hear how things have been going — your feedback really helps us improve.",
-        ]
-    offer = random.choice(offers)
-
-    if risk_score > 85:
-        ctas = [
-            "Would you have 15 minutes this week for a quick call? I'd love to connect.",
-            "If you ever have questions or concerns, please don't hesitate to reach out — I'm always happy to help.",
-            "Could we find 10-15 minutes to catch up? I'd really value hearing your thoughts.",
-        ]
-    else:
-        ctas = [
-            "Feel free to reply here or book a quick call whenever works for you!",
-            "My calendar is open — happy to jump on a call at your convenience.",
-            "Don't hesitate to reach out anytime — I'm here whenever you need me.",
-        ]
-    cta = random.choice(ctas)
-
-    closings = [
-        "Looking forward to hearing from you!",
-        "Hope to connect soon!",
-        "Talk soon!",
-        "Warmly,",
-        "Best wishes,",
-    ]
-    closing = random.choice(closings)
-
-    subjects = [
-        f"Checking in, {first_name} — how's everything going?",
-        f"Hey {first_name}, just wanted to touch base!",
-        f"A quick note for you, {first_name}",
-        f"{first_name} — how are things with Digital Move?",
-        f"Thinking of you, {first_name} — let's catch up!",
-    ]
-    subject = random.choice(subjects)
-
-    extras = [
-        "\nWe've also got some exciting updates coming up that I think you'll really like — happy to share more on a call.",
-        f"\nAs a valued {plan} customer, there may also be some exclusive options available to you that I'd love to walk you through.",
-        "",
-        "",
-        "",
-    ]
-    extra = random.choice(extras)
-
-    body = (
-        f"Hi {first_name},\n\n"
-        f"{opener}\n\n"
-        f"{offer}{extra}\n\n"
-        f"{cta}\n\n"
-        f"{closing}\n"
-        f"{sender}\n"
-        f"{title}\n"
-        f"Digital Move IT & Telecom"
-    )
-
-    return subject, body
 
 
 @app.route("/")
@@ -519,7 +422,7 @@ def _compute_clients_data():
             try:
                 last = datetime.strptime(row['last_contact'], '%Y-%m-%d')
                 row['days_since_contact'] = (today - last).days
-            except:
+            except (TypeError, ValueError):
                 row['days_since_contact'] = None
         else:
             row['days_since_contact'] = None
@@ -546,7 +449,7 @@ def _compute_clients_data():
                     
                 row['churn_risk_score'] = score
                 row['journey_stage'] = stage
-            except:
+            except (TypeError, ValueError):
                 row['days_until_expiry'] = None
                 row['churn_risk_score'] = 0
                 row['journey_stage'] = "Unknown"
@@ -608,7 +511,7 @@ def _compute_stats_data():
                 value_at_risk += val
             else:
                 active += 1
-        except:
+        except (TypeError, ValueError):
             pass
 
     return {
@@ -630,8 +533,9 @@ def _compute_stats_data():
 
 @app.route("/api/db/stats")
 @require_auth
+@cache_response("stats")
 def get_db_stats():
-    return jsonify(_compute_stats_data())
+    return _compute_stats_data()
 
 
 @app.route("/api/db/retention-history")
@@ -702,21 +606,16 @@ def import_data():
         
         os.unlink(tmp.name)
         invalidate_cached_response("clients")
+        invalidate_cached_response("stats")
         return jsonify({"success": True, "imported": result['imported'], "mapping": result['mapping']})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Render wipes the disk on every boot, so rebuild + reseed the DB on startup.
 init_db()
-
-# quotes_api.ensure_schema() also runs at import time (above), but that fires
-# before pipeline_deals necessarily exists yet -- deals_api's own ensure_schema()
-# (imported after quotes_api, line 15) can end up being what actually creates
-# pipeline_deals first, with its own narrower schema that has no quote_discount/
-# quote_status/quote_sent_at columns, leaving quotes_api's ALTER TABLE calls
-# swallowed and the columns permanently missing. Re-run it now that init_db()
-# has guaranteed the table exists, and before seed_if_empty() -- which writes
-# to those columns -- runs.
+ensure_contacts_schema()
+ensure_activities_schema()
+ensure_notifications_schema()
+ensure_deals_schema()
 ensure_quotes_schema()
 seed_if_empty()
 

@@ -1,18 +1,14 @@
 import os
 import re
-import sqlite3
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
 import jwt
-from dotenv import load_dotenv
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-
-load_dotenv()
+from database import get_db, get_request_conn
 
 auth_bp = Blueprint("auth_bp", __name__)
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "retainiq.db")
 
 JWT_ALGO = "HS256"
 JWT_TTL = timedelta(days=7)
@@ -32,22 +28,15 @@ MAX_EMAIL_LEN = 254
 MAX_PASSWORD_LEN = 128
 
 
-def get_conn():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
 
+
+_DEV_FALLBACK_KEY = "retainiq-dev-key-not-for-production"
 
 def _secret_key():
-    # Falls back to an in-process random key so local dev never hard-crashes
-    # without a .env, but this means tokens issued before a restart won't
-    # verify after one -- production must set SECRET_KEY explicitly.
     key = os.environ.get("SECRET_KEY")
     if not key:
-        import secrets
-        key = secrets.token_hex(32)
-        print("WARNING: SECRET_KEY not set -- using an ephemeral key for this process only.")
-        os.environ["SECRET_KEY"] = key
+        print("WARNING: SECRET_KEY not set -- using a shared dev-only fallback.")
+        key = _DEV_FALLBACK_KEY
     return key
 
 
@@ -93,13 +82,10 @@ def _authenticate():
         request._auth_error = (jsonify({"error": "Invalid or expired session"}), 401)
         return None, None
 
-    conn = get_conn()
-    try:
-        user = conn.execute(
-            "SELECT id, email, created_at FROM users WHERE id = ?", (user_id,)
-        ).fetchone()
-    finally:
-        conn.close()
+    conn = get_request_conn()
+    user = conn.execute(
+        "SELECT id, email, created_at FROM users WHERE id = ?", (user_id,)
+    ).fetchone()
 
     if not user:
         request._auth_error = (jsonify({"error": "Invalid or expired session"}), 401)
@@ -147,15 +133,12 @@ def ensure_guest_user():
     A no-op once it exists; skipped entirely if guest mode is disabled."""
     if not GUEST_MODE_ENABLED:
         return
-    conn = get_conn()
+    conn = get_db()
     try:
         existing = conn.execute("SELECT id FROM users WHERE email = ?", (GUEST_EMAIL,)).fetchone()
         if existing:
             return
         import secrets
-        # Guests never authenticate with a password -- this hash is unusable
-        # (no signup/login path ever compares against it), just satisfies the
-        # NOT NULL column.
         unusable_hash = generate_password_hash(secrets.token_hex(32))
         conn.execute(
             "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
@@ -187,30 +170,24 @@ def signup():
     name = email.split("@")[0]
     password_hash = generate_password_hash(password)
 
-    conn = get_conn()
+    import sqlite3
+    conn = get_request_conn()
+    existing = conn.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+    if existing:
+        return jsonify({"error": "An account with that email already exists"}), 409
+
     try:
-        existing = conn.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
-        if existing:
-            return jsonify({"error": "An account with that email already exists"}), 409
+        cur = conn.execute(
+            "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
+            (name, email, password_hash),
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        return jsonify({"error": "An account with that email already exists"}), 409
 
-        try:
-            cur = conn.execute(
-                "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
-                (name, email, password_hash),
-            )
-            conn.commit()
-        except sqlite3.IntegrityError:
-            # Two concurrent signups for the same email both passed the
-            # SELECT above before either committed -- the table's UNIQUE
-            # constraint is the real race guard; this just turns the DB's
-            # rejection into the same clean 409 instead of a 500.
-            return jsonify({"error": "An account with that email already exists"}), 409
-
-        row = conn.execute(
-            "SELECT id, email, created_at FROM users WHERE id = ?", (cur.lastrowid,)
-        ).fetchone()
-    finally:
-        conn.close()
+    row = conn.execute(
+        "SELECT id, email, created_at FROM users WHERE id = ?", (cur.lastrowid,)
+    ).fetchone()
 
     token = _issue_token(row["id"])
     return jsonify({"token": token, "user": _public_user(row)}), 201
@@ -230,13 +207,10 @@ def login():
     if len(email) > MAX_EMAIL_LEN or len(password) > MAX_PASSWORD_LEN:
         return generic_error
 
-    conn = get_conn()
-    try:
-        row = conn.execute(
-            "SELECT id, email, created_at, password_hash FROM users WHERE email = ?", (email,)
-        ).fetchone()
-    finally:
-        conn.close()
+    conn = get_request_conn()
+    row = conn.execute(
+        "SELECT id, email, created_at, password_hash FROM users WHERE email = ?", (email,)
+    ).fetchone()
 
     # Same generic message whether the email doesn't exist or the password
     # is wrong -- never reveal which one it was.
@@ -253,11 +227,8 @@ def guest_login():
         return jsonify({"error": "Guest mode is disabled"}), 403
 
     ensure_guest_user()
-    conn = get_conn()
-    try:
-        row = conn.execute("SELECT id, email, created_at FROM users WHERE email = ?", (GUEST_EMAIL,)).fetchone()
-    finally:
-        conn.close()
+    conn = get_request_conn()
+    row = conn.execute("SELECT id, email, created_at FROM users WHERE email = ?", (GUEST_EMAIL,)).fetchone()
 
     if not row:
         return jsonify({"error": "Guest mode is unavailable right now"}), 503
@@ -275,12 +246,9 @@ def me():
 @auth_bp.route("/api/auth/account", methods=["DELETE"])
 @require_write_access
 def delete_account():
-    conn = get_conn()
-    try:
-        conn.execute("DELETE FROM users WHERE id = ?", (request.user["id"],))
-        conn.commit()
-    finally:
-        conn.close()
+    conn = get_request_conn()
+    conn.execute("DELETE FROM users WHERE id = ?", (request.user["id"],))
+    conn.commit()
     return jsonify({"ok": True})
 
 

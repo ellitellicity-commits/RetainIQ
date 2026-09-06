@@ -1,12 +1,10 @@
-import os, sqlite3
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from flask import Blueprint, request, jsonify
+from database import get_db, get_request_conn
 from activities_api import log_activity
 from auth_api import require_auth, require_write_access
 
 deals_bp = Blueprint("deals_bp", __name__)
-
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "retainiq.db")
 TABLE = "pipeline_deals"
 
 DESIRED_COLUMNS = {
@@ -17,11 +15,6 @@ DESIRED_COLUMNS = {
 }
 
 OFFSETS = {"New Leads": 80, "Qualified": 60, "Demo": 45, "Quote sent": 30, "Negotiation": 15}
-
-def get_conn():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
 
 def _d(days_ago):
     return (date.today() - timedelta(days=days_ago)).isoformat()
@@ -44,7 +37,8 @@ def resolve_client_id(conn, company):
         return None
 
 def ensure_schema():
-    conn = get_conn(); c = conn.cursor()
+    conn = get_db()
+    c = conn.cursor()
     c.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE} (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         company TEXT, value REAL, stage TEXT, owner TEXT,
@@ -60,12 +54,10 @@ def ensure_schema():
     n = c.execute(f"SELECT COUNT(*) AS n FROM {TABLE}").fetchone()["n"]
     if n == 0:
         seed(c); conn.commit()
-    # backfill expected_close_date for open deals that lack one
     for r in c.execute(f"SELECT id, stage, expected_close_date, status FROM {TABLE}").fetchall():
         if r["status"] == "open" and not r["expected_close_date"]:
             c.execute(f"UPDATE {TABLE} SET expected_close_date=? WHERE id=?", (close_date_for(r["stage"]), r["id"]))
     conn.commit()
-    # backfill client_id by matching company name to a client
     try:
         for r in c.execute(f"SELECT id, company, client_id FROM {TABLE}").fetchall():
             if r["client_id"] is None and r["company"]:
@@ -112,9 +104,8 @@ def row_to_dict(r):
 @deals_bp.route("/api/db/deals", methods=["GET"])
 @require_auth
 def list_deals():
-    conn = get_conn()
+    conn = get_request_conn()
     rows = conn.execute(f"SELECT * FROM {TABLE} ORDER BY id").fetchall()
-    conn.close()
     return jsonify([row_to_dict(r) for r in rows])
 
 @deals_bp.route("/api/db/deals", methods=["POST"])
@@ -128,7 +119,7 @@ def create_deal():
         val = 0
     stage = data.get("stage") or "New Leads"
     ecd = data.get("expected_close_date") or close_date_for(stage)
-    conn = get_conn()
+    conn = get_request_conn()
     cid = resolve_client_id(conn, data.get("company"))
     cur = conn.execute(
         f"INSERT INTO {TABLE} (company,client_id,value,stage,owner,next_action,next_action_date,lead_source,product,stage_updated_at,created_at,status,expected_close_date) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -137,17 +128,16 @@ def create_deal():
     )
     conn.commit()
     row = conn.execute(f"SELECT * FROM {TABLE} WHERE id=?", (cur.lastrowid,)).fetchone()
-    conn.close()
     return jsonify(row_to_dict(row))
 
 @deals_bp.route("/api/db/deals/<int:deal_id>", methods=["PATCH", "PUT"])
 @require_write_access
 def update_deal(deal_id):
     data = request.get_json(force=True) or {}
-    conn = get_conn()
+    conn = get_request_conn()
     existing = conn.execute(f"SELECT * FROM {TABLE} WHERE id=?", (deal_id,)).fetchone()
     if not existing:
-        conn.close(); return jsonify({"error": "not found"}), 404
+        return jsonify({"error": "not found"}), 404
     fields = ["company", "value", "stage", "owner", "next_action", "next_action_date", "lead_source", "product", "expected_close_date"]
     updates, params = [], []
     for fld in fields:
@@ -164,9 +154,9 @@ def update_deal(deal_id):
         updates.append("status=?"); params.append("won" if st == "Closed-Won" else ("lost" if st == "Closed-Lost" else "open"))
     if updates:
         params.append(deal_id)
-        conn.execute(f"UPDATE {TABLE} SET {', '.join(updates)} WHERE id=?", params); conn.commit()
+        conn.execute(f"UPDATE {TABLE} SET {', '.join(updates)} WHERE id=?", params)
+        conn.commit()
     row = conn.execute(f"SELECT * FROM {TABLE} WHERE id=?", (deal_id,)).fetchone()
-    conn.close()
 
     if stage_changed:
         log_activity(
@@ -182,12 +172,7 @@ def update_deal(deal_id):
 @deals_bp.route("/api/db/deals/<int:deal_id>", methods=["DELETE"])
 @require_write_access
 def delete_deal(deal_id):
-    conn = get_conn()
+    conn = get_request_conn()
     conn.execute(f"DELETE FROM {TABLE} WHERE id=?", (deal_id,))
-    conn.commit(); conn.close()
+    conn.commit()
     return jsonify({"ok": True})
-
-try:
-    ensure_schema()
-except Exception as e:
-    print("deals_api ensure_schema warning:", e)

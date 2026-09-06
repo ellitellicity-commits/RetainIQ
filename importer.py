@@ -2,15 +2,9 @@ import pandas as pd
 import json
 import os
 from groq import Groq
-from dotenv import load_dotenv
 from database import get_db, init_db
 from datetime import datetime, date
 
-load_dotenv()
-
-# Explicit, tight bound instead of the SDK's defaults -- see the matching
-# comment in app.py's generate_template_email for why this matters: each
-# gunicorn worker (see Procfile) only handles one request at a time.
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"), timeout=10.0, max_retries=1)
 
 KNOWN_FIELDS = {
@@ -75,7 +69,7 @@ JSON:"""
         text = text.split("```")[1].replace("json", "").strip()
     try:
         return json.loads(text)
-    except:
+    except (json.JSONDecodeError, ValueError):
         return {}
 
 def harden_schema(c):
