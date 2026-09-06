@@ -107,10 +107,10 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
   };
 
   const moveDeal = (id, stage) => {
-    if (isGuest) return;
     const deal = deals.find(d => d.id === id);
     if (!deal || deal.stage === stage) return;
     setDeals(ds => ds.map(d => d.id === id ? { ...d, stage, days_in_stage: 0, stage_updated_at: todayISO(), status: stage === "Closed-Won" ? "won" : stage === "Closed-Lost" ? "lost" : "open" } : d));
+    if (isGuest) return;
     fetch(`${API}/api/db/deals/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ stage }) })
       .then(r => r.json()).then(u => { invalidateCache("deals"); setDeals(ds => ds.map(d => d.id === id ? u : d)); }).catch(() => load());
   };
@@ -129,8 +129,12 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
   };
 
   const quickStage = (stage) => {
-    if (isGuest) return;
     if (selected === "new") { setDraft({ ...draft, stage }); return; }
+    if (isGuest) {
+      setDeals(ds => ds.map(d => d.id === selected.id ? { ...d, stage, days_in_stage: 0, stage_updated_at: todayISO(), status: stage === "Closed-Won" ? "won" : stage === "Closed-Lost" ? "lost" : "open" } : d));
+      close();
+      return;
+    }
     fetch(`${API}/api/db/deals/${selected.id}`, { method: "PATCH", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ stage }) })
       .then(r => r.json()).then(() => { invalidateCache("deals"); load(); close(); });
   };
@@ -176,7 +180,7 @@ export default function Pipeline({ API, pageAction, clearAction, openDealId, cle
     const big = (d.value || 0) >= 100000;
     const overdue = d.next_action_date && d.next_action_date <= todayISO() && d.status === "open";
     return (
-      <div key={d.id} draggable={!isMobile && !isGuest}
+      <div key={d.id} draggable={!isMobile}
         onDragStart={() => { draggingIdRef.current = d.id; droppedRef.current = false; }}
         onDragEnd={() => {
           if (!droppedRef.current && draggingIdRef.current != null && overStageRef.current != null) {
